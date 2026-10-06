@@ -1,9 +1,14 @@
 # Quickstart — chapter 4.22, "The identifier the customer gave it"
 
-**§0 to §2 are MEASURED on 2026-10-05. §3 and §4 are PREDICTIONS** until phase 9 runs
-them. Chapter 4.21's two predictions were both wrong for one reason — they were
-written before two decisions were taken — so distrust any section whose behaviour
-Phase 2 still decides.
+**Every section is MEASURED against the composed api on 2026-10-06**, after the
+chapter shipped. Nothing here is a prediction.
+
+**What this file said before.** §1 and §2 were the *wall* — the 500 a customer got
+asking for a channel by the name they gave it — and §3 and §4 were marked
+PREDICTION. The wall is gone, so the measured sections are now the working ones
+and the wall is kept in §4 as the cause rather than the symptom. **Both
+predictions came true on the first run**, which has not been the usual outcome:
+4.21's were both wrong, 4.20's wrong five times, 4.16's three.
 
 ## 0 · Prerequisites
 
@@ -18,10 +23,10 @@ export K=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs 2>/dev/nu
 ```
 
 **THE IMAGE REBUILD IS NOT OPTIONAL.** Everything below talks to `localhost:4000`,
-the composed container. 4.11, 4.19 and 4.20 each met a route answering 404 against a
-stale image and read it as a missing route.
+the composed container. 4.11, 4.19 and 4.20 each met a route answering 404
+against a stale image and read it as a missing route.
 
-## 1 · MEASURED — the wall
+## 1 · MEASURED — the name you gave it is the name that works
 
 ```bash
 ORD="order-$RANDOM"
@@ -36,9 +41,71 @@ for key in "$ORD" "$CID"; do
 done
 ```
 
-**Measured**: the identifier answers **500**, the uuid answers **200**.
+```
+  order-2494                               200
+  8a50e324-cb1f-4900-95ab-6f3f97d7ee60     200
+```
 
-## 2 · MEASURED — why it is a 500 and not a 404
+**Both, and the first was a 500 before this chapter.** The second line is the half
+that must not change: 173 call sites in the test corpus pass a uuid and every
+published client holds one.
+
+## 2 · MEASURED — every route beneath the prefix, by name
+
+```bash
+ORD="order-$RANDOM"; BOT="qb-$RANDOM"
+curl -s -X POST localhost:4000/v1/channels -H "authorization: Bearer $K" \
+  -H 'content-type: application/json' -d "{\"external_id\":\"$ORD\",\"type\":\"private\"}" >/dev/null
+curl -s -X POST localhost:4000/v1/users -H "authorization: Bearer $K" \
+  -H 'content-type: application/json' \
+  -d "{\"users\":[{\"external_id\":\"$BOT\",\"kind\":\"bot\",\"description\":\"b\"}]}" >/dev/null
+curl -s -X POST "localhost:4000/v1/channels/$ORD/members" -H "authorization: Bearer $K" \
+  -H 'content-type: application/json' -d "{\"user_ids\":[\"$BOT\"]}" >/dev/null
+
+for r in "GET /v1/channels/$ORD" "GET /v1/channels/$ORD/messages" \
+         "POST /v1/channels/$ORD/archive" "DELETE /v1/channels/$ORD/archive"; do
+  set -- $r
+  printf '  %-6s %-46s %s\n' "$1" "$2" \
+    "$(curl -s -o /dev/null -w '%{http_code}' -X "$1" -H "authorization: Bearer $K" "localhost:4000$2")"
+done
+
+curl -s -o /dev/null -w '  POST   send a message                           %{http_code}\n' \
+  -X POST "localhost:4000/v1/channels/$ORD/messages" -H "authorization: Bearer $K" \
+  -H 'content-type: application/json' -d "{\"user\":\"$BOT\",\"text\":\"hello\"}"
+```
+
+```
+  GET    /v1/channels/order-30688                       200
+  GET    /v1/channels/order-30688/messages              200
+  POST   /v1/channels/order-30688/archive               200
+  DELETE /v1/channels/order-30688/archive               200
+  POST   send a message                                 201
+```
+
+**THE BOT IS NOT DECORATION.** An application credential may send only as a bot
+user — `sender_not_permitted`, *"an application credential may send only as a bot
+user; name one in `user`"* — so a fixture that creates a plain person gets a 403
+on the send and the whole section reads as broken. That cost two wrong runs during
+implementation and is the most common way this file goes wrong.
+
+## 3 · MEASURED — an identifier nobody used
+
+```bash
+curl -s -o /dev/null -w '  absent identifier: %{http_code}\n' \
+  -H "authorization: Bearer $K" "localhost:4000/v1/channels/order-nobody-created-this"
+```
+
+```
+  absent identifier: 404
+```
+
+**This one line is the whole difference between a platform that refuses and one
+that breaks.** It was `500 internal_error` before the chapter.
+
+## 4 · MEASURED — why it was a 500, which is still true of the SQL
+
+The database has not changed, and the statement the route used to send still fails
+exactly as it did:
 
 ```bash
 docker compose exec -T postgres psql -U relay -d relay -c \
@@ -49,76 +116,28 @@ docker compose exec -T postgres psql -U relay -d relay -c \
 ERROR:  invalid input syntax for type uuid: "x"
 ```
 
-**Postgres raises before the `OR` can short-circuit.** The path segment reaches a
-uuid-typed column, the driver sends it as a uuid, the database refuses it. That is
-the 500 — and **the api logs the status without the cause**, measured: one `"status":500`
-line and nothing else.
+**Postgres raises before the `OR` can short-circuit.** What changed is not the
+database's behaviour but whether the api ever asks it this question: a value that
+cannot parse as a uuid now reaches the identity predicate alone, and `$1::uuid`
+never appears in the statement.
 
-## 3 · The identifier works everywhere (PREDICTION)
-
-```bash
-ORD="order-$RANDOM"
-curl -s -X POST localhost:4000/v1/channels -H "authorization: Bearer $K" \
-  -H 'content-type: application/json' -d "{\"external_id\":\"$ORD\",\"type\":\"private\"}" >/dev/null
-BOT="qb-$RANDOM"
-curl -s -X POST localhost:4000/v1/users -H "authorization: Bearer $K" \
-  -H 'content-type: application/json' -d "{\"users\":[{\"external_id\":\"$BOT\",\"kind\":\"bot\",\"description\":\"b\"}]}" >/dev/null
-curl -s -X POST "localhost:4000/v1/channels/$ORD/members" -H "authorization: Bearer $K" \
-  -H 'content-type: application/json' -d "{\"user_ids\":[\"$BOT\"]}" >/dev/null
-
-for r in "GET /v1/channels/$ORD" "GET /v1/channels/$ORD/messages" \
-         "POST /v1/channels/$ORD/archive" "DELETE /v1/channels/$ORD/archive"; do
-  set -- $r
-  printf '  %-6s %-46s %s\n' "$1" "$2" \
-    "$(curl -s -o /dev/null -w '%{http_code}' -X "$1" -H "authorization: Bearer $K" "localhost:4000$2")"
-done
-```
-
-And the send, which needs a body and so cannot ride the loop:
-
-```bash
-curl -s -o /dev/null -w '  POST   /v1/channels/$ORD/messages%{http_code}\n' \
-  -X POST "localhost:4000/v1/channels/$ORD/messages" -H "authorization: Bearer $K" \
-  -H 'content-type: application/json' -d "{\"user\":\"$BOT\",\"text\":\"hello\"}"
-```
-
-**Expected after the chapter**: 200 on every line of the loop and **201** on the
-send, **with the customer never having seen a uuid on any of these calls**. The
-qualifier is load-bearing — a client holding a WebSocket still receives channel uuids
-in every frame, which §5 records. **The send was promised by this
-section's prose and absent from its script for three analysis passes** — a prediction
-nothing would have produced.
-
-## 4 · And an identifier nobody used (PREDICTION)
-
-```bash
-curl -s -o /dev/null -w '  absent identifier: %{http_code}\n' \
-  -H "authorization: Bearer $K" "localhost:4000/v1/channels/order-nobody-created-this"
-```
-
-**Expected**: `404`. **It is `500` today**, and this one line is the whole difference
-between a platform that refuses and one that breaks.
+**And the api still logs a 500 without its cause** — one `"status":500` line, no
+`22P02`. That is every 500 on this platform, and this chapter did not fix it.
 
 ## 5 · And what this still cannot show
 
-- **Whether a customer stops keeping a lookup table.** The chapter removes the need;
-  whether anyone's tool changes is theirs to decide.
+- **Whether a customer stops keeping a lookup table.** The chapter removes the
+  need; whether anyone's tool changes is theirs to decide.
 - **The collision.** An `external_id` that is itself a uuid is legal and **0 of
   41,772** channels have one, so the tie-break is a constructed test and not an
   observed case.
 - **Whether the uuid is ever retired.** 173 call sites hold one. Not this chapter.
-- **US2's sweep.** *Does any internal key reach a customer?* is an audit of every
-  response shape, not a curl, so it lives in the chapter and in T026 rather than
-  here. The count it produces is SC-006.
-- **Nothing about `:messageId` any more.** It was here as a limitation —
-  `…/messages/not-a-uuid` answering 500 on three routes — and the chapter closes it
-  instead (T020b), so the no-5xx claim covers every path parameter. What this
-  quickstart still cannot show is the **logging**: a 500 that does arise is recorded
-  as a status with no cause, on every route.
-- **The real-time surface.** Every frame the gateway sends carries `channel:
-  <uuid>`, the session response hands a connecting client a list of channel uuids,
-  and a socket send is forwarded to a door that requires one. **So the lookup table
-  this chapter removes from REST is still needed by anyone holding a socket** — on
-  Journey 3's Stage 5, which is the same journey that promises zero of them. Not this
-  chapter's to fix: it is the gateway, the fanout subjects, the resume cursors and
-  the internal contract.
+- **The internal-key sweep.** *Does any value we return name something no route
+  accepts?* is an audit of every response shape, not a curl, so it lives in the
+  chapter and in `baseline.txt`. It found one — `members[].user_id` — and that
+  count is why ADR-37 is amended.
+- **The real-time surface.** Every gateway frame carries `channel: <uuid>`, the
+  session response hands a connecting client a list of channel uuids, and a socket
+  send goes to a door typed `z.string().uuid()`. **So the lookup table this chapter
+  removes from REST is still needed by anyone holding a socket** — on Journey 3's
+  Stage 5, in the same journey whose Stage 1 promises zero of them.

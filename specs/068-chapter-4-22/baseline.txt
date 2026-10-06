@@ -912,3 +912,164 @@ Four predictions, four hits. The value is not that they were right — it is tha
 a wrong one would have named its own cause: a chapter count that did not move
 means the page was never found, and a file count that moved means a fence got a
 title it should not have.
+
+PHASE 9 — THE RECORD AND THE CLOSE
+================================================================================
+
+T058 · THE QUICKSTART, RUN — AND BOTH PREDICTIONS WERE RIGHT FIRST TIME
+--------------------------------------------------------------------------------
+    §1  the identifier       200        was 500
+        the uuid             200        unchanged, and the half that must not move
+    §2  GET channel          200
+        GET messages         200
+        POST archive         200
+        DELETE archive       200
+        POST a message       201
+    §3  an absent identifier 404        was 500
+    §4  the raw SQL          ERROR 22P02, unchanged — the database never moved
+
+**Wrong zero times**, against 4.21's two wrong, 4.20's five and 4.16's three.
+The file was rewritten rather than ticked: §1 and §2 WERE the wall and the wall
+is gone, so the measured sections are the working ones now and the wall is kept
+in §4 as the cause rather than the symptom.
+
+**And the one thing that makes this file break is in it now.** An application
+credential may send only as a BOT — `sender_not_permitted` — so a fixture
+creating a plain person gets a 403 on the send and the section reads as broken.
+That cost two wrong runs during implementation and twice more during the
+response-shape sweep: **four times in one feature, the same refusal.**
+
+T059 · FR-009, CHECKED RATHER THAN TRUSTED (SC-008)
+--------------------------------------------------------------------------------
+`git diff --name-only part4-ch21 -- .` in each repository, one dot so the
+working tree counts.
+
+**relay-platform — 12 files, every one this chapter's**: the pipe, the uuid
+pipe, the resolution, three controllers, `channels.service.ts`, the gauntlet,
+the new suite, `media.controller.ts`'s falsified comment, the coverage pins —
+**and `compose.yaml`, which is the one real exception.** It is outside the
+subject and FR-009 says there should be no such change; without it the composed
+api cannot create a stream and the quickstart cannot run at all. Recorded at
+Phase 2 before it was made, not after it was found.
+
+**The superproject carries three things that are NOT this chapter's**, and the
+reason is that the tag is older than the work:
+
+    specs/067-chapter-4-21/{baseline.txt,tasks.md}   067's own close-out,
+                                                     commits 119fc49 and 6408e64
+    specs/069-chapter-4-23/ (8 files)                069's specification, written
+                                                     before 068 existed
+    .specify/feature.json                            Spec Kit's own state
+
+None is a violation; all three post-date `part4-ch21` because that tag was cut
+before 067 finished its paperwork and before 069 was specified. **A diff against
+a tag answers "since when", not "by whom"** — which is worth saying because the
+check reads as a violation until you open the commits.
+
+T061 · THE FULL LANE SET, AND TWO FAILURES THAT WERE BOTH THE MACHINE
+--------------------------------------------------------------------------------
+    pnpm exec turbo run test --force
+    13 tasks, Cached: 0 of 13, 7.959 s                              EXIT 0
+
+**THE SEALED SUITE STOPPED TURBO SCHEDULING THE REST.** `test:integration`
+across all six lanes answered `Tasks: 1 successful, 4 total` in 1.044 s, because
+`packages/outsider` refuses without `RELAY_API_URL`, `RELAY_WS_URL` and
+`RELAY_DEMO_CREDENTIAL` — and `--concurrency=1` means turbo stops at the first
+failure (052-1). The refusal itself is a good instrument: it names all three
+variables and prints the five commands that fix it.
+
+But it means **the sealed suite and the api lane want opposite machine states**
+— the sealed suite needs the composed services UP, and the api lane needs them
+DOWN or a second relay drains rows its tests are counting. Run as one command
+they cannot both pass. Split:
+
+    turbo run test:integration --force --filter='!@relay/outsider'
+    12 of 14 tasks, 1m18s    4 FAILED in @relay/dispatcher
+
+**AND THE DISPATCHER'S FOUR WERE THE VOLUME RESET, NOT THE CHAPTER.** The suite
+has **zero** references to channels — `grep -c "v1/channels|ChannelIdPipe|
+resolveChannelId|external_id"` is 0 — and the assertions read `expected [] to
+have a length of 2`: nothing was delivered at all.
+
+The cause is Phase 1's `docker volume rm relay_nats-data`. The api creates
+`EVENTS` and `ANALYTICS` on boot; **nothing creates `DELIVERIES` except the
+first thing that publishes to it**, so the first dispatcher run after a reset
+asserts against a stream that does not exist. Re-run in isolation: **16 of 16**,
+and `jsz` now shows all three streams.
+
+    EVENTS      1,411 msgs   7 consumers
+    ANALYTICS   1,299 msgs   2 consumers
+    DELIVERIES    101 msgs   1 consumer
+
+**AND THAT EXPLANATION WAS WRONG, WHICH THE NEXT RUN SAID.** "A fresh volume
+costs the dispatcher suite one run" predicted that the second full-lane run
+would be green. It was not: the same four failed again, 1m17s, while the suite
+alone passes 16 of 16. So it is not the reset — it is interference, reproducible
+in the full set and absent in isolation.
+
+It is recorded here with the wrong reading left in because the wrong reading was
+reasonable and testable, and the thing that falsified it was running the lane
+again rather than thinking about it harder. **An explanation that accounts for
+one observation is a hypothesis; the cheapest test of it is the observation it
+predicts.**
+
+What is established:
+
+    dispatcher alone              16 of 16
+    full lane set, run 1           4 failed
+    full lane set, run 2           4 failed, the same four
+    the suite's channel references  0
+    its assertions                  scoped to its own randomUUID() eventId
+
+So the failures are not whole-table assertions and not this chapter's subject.
+`jsz` shows **EVENTS carrying 7 consumers**, which is the shape of the answer:
+several lanes attach to the same stream and a durable consumer delivers a
+message once.
+
+**THE PAIR TEST SETTLED IT, AND THE COLLISION IS SYMMETRIC.** api and dispatcher
+together, nothing else:
+
+    @relay/dispatcher    16 of 16 PASSED
+    @relay/api            2 failed of 1,001
+                          media-updated · "publishes once when one channel
+                                            holds two messages for the object"
+                          test-event    · "answers honestly when nothing is
+                                            there to make the attempt"
+
+**The lane that loses is whichever one the other steals from.** Earlier the
+dispatcher lost four; now it wins and the api loses two — and both losing
+assertions are exactly-once or nothing-is-there claims over a shared stream.
+Two lanes attached to one durable consumer, where the broker delivers a message
+once and the second reader polls an empty list until it times out.
+
+So it is not this chapter, which adds no consumer and no publisher, and it is
+not the volume reset. **It is a property of running these two lanes against one
+broker**, and the evidence is that each suite is green alone and one of them
+fails whenever they are not.
+
+    api alone          998 of 998, three times   (1,001 after T031's three)
+    dispatcher alone    16 of 16, twice
+    together           one of them fails, either one
+
+**WHAT WOULD HAVE SETTLED IT FASTER AND WAS REFUSED.** A revert-and-measure
+against `part4-ch21` — `git checkout part4-ch21 -- services/ …`, run, restore —
+is this project's own method for "is this mine?", and the tool refused it as an
+irreversible local operation. The pair test is the substitute and it answers the
+mechanism; what it cannot answer is whether the collision predates the chapter,
+and CI is the instrument that can, because it builds a fresh volume and runs
+these lanes its own way.
+
+    api alone, final        54 files, 1,001 tests, 0 failed        EXIT 0
+    dispatcher alone        16 of 16                               EXIT 0
+    unit, forced            13 tasks, Cached: 0 of 13, 7.959 s     EXIT 0
+    coverage                155 files, 2,302 tests, 0 threshold errors
+    sealed suite            21 of 21, services up + three env vars EXIT 0
+    six tutorial gates      all EXIT 0, four predicted deltas hit
+
+T062 · THE SEALED SUITE
+--------------------------------------------------------------------------------
+21 of 21, the same count as 4.21's close, run the form `ci.yml:360` runs — the
+composed services UP and `RELAY_DEMO_CREDENTIAL`, `RELAY_API_URL` and
+`RELAY_WS_URL` exported. **Nothing in it noticed the chapter**, which is the
+right answer for a suite that integrates from outside: the identity form is
+additive and every call it makes still passes a uuid.
