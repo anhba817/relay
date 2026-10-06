@@ -148,3 +148,45 @@ R3  173 call sites across 22 files
 R4  @Param("channelId")   channels 7 · messages 5 · users 1 = 13
 
 Every figure matches the artifacts. Nothing moved between pass 9 and Phase 1.
+
+T004 · THE CI ERROR SET AT THE OPEN
+--------------------------------------------------------------------------------
+Run 37255731409, head 92cf02d5, 2026-10-05. ALL FOUR JOBS GREEN:
+
+    success  relay-platform — integration lanes and coverage
+    success  relay-platform — the sealed integration
+    success  relay-platform — the Docker-free gate
+    success  relay-tutorial — build, docs drift, fence chain
+
+43 raw matches for `error[: ]`, which normalise to SEVEN distinct strings. The
+normalisation is the instrument and T065 must use the identical pipeline:
+
+    gh run view <id> --log | sed 's/\x1b\[[0-9;]*m//g'
+      | grep -oiE "error[: ][^|]{0,90}"
+      | sed -E 's/127\.0\.0\.1:[0-9]+/127.0.0.1:<port>/g; s/[0-9]+ms/<ms>/g;
+                 s/\b[0-9a-f]{8,}\b/<hash>/g; s/[0-9]{3,}/<n>/g'
+      | sort -u
+
+    Error: <n>"}
+    Error: connect ECONNREFUSED <n>.0.0.1:<port>"}
+    error ^[[33m <n>^[[2mms^[[22m^[[39m
+    error event: AggregateError:
+    error event: Error: connect ECONNREFUSED <n>.0.0.1:<port>
+    error event: Error: read ECONNRESET
+    error frame (FR-<n>) ^[[33m <n>^[[2mms^[[22m^[[39m
+
+All seven are a green run's own expected-error output — refusal tests printing
+what they refused. 069's T004 read 0 distinct on a green run and noted that an
+empty diff between two green runs carries nothing; this set is not empty, so the
+comparison at T065 can say something. Two of the seven still carry raw escape
+sequences the strip missed, which is harmless while both ends use one pipeline
+and would not be if anyone hand-compared.
+
+T006a · PROPAGATION — NOTHING TO PROPAGATE
+--------------------------------------------------------------------------------
+Every quoted figure was re-derived at T005 and T006 and none moved since
+analysis pass 9: 41,772 channels, 0 uuid-shaped, 1,597 reused user external ids,
+173 call sites, 13 @Param sites, 53/46/17/66 fence pages. The task exists
+because T006 says "re-measure" and does not say "and update the nine places that
+quote it"; this time the sweep had nothing to do, which is the outcome it should
+report rather than skip.
