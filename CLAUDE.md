@@ -38,12 +38,23 @@ pre-contraction ordinals — the queryable attempt log is 4.2, FR-MOD-03's audit
 **Name a Part 4 chapter by its movement and title, not its number**, for the reason Part 3
 already taught.
 
-**PART 4 IS 23 CHAPTERS. IT CONTRACTED TWICE AND THEN EXPANDED ONCE** — 24 to 23 when
+**PART 4 IS 24 CHAPTERS. IT CONTRACTED TWICE AND HAS NOW EXPANDED TWICE** — 24 to 23 when
 movement I shipped as one chapter, 23 to 22 when 4.2 built all four items of the ledger
-chapter's brief, and **22 to 23 when the Priya milestone's premise check found the channel
-routes contradicting FR-USR-01 and ADR-18 on thirteen routes** (feature 068). Rule 4 says a
-milestone verifies rather than builds, so the fix is its own chapter placed BEFORE it.
-**Milestones are at 9, 17 and 23.** `docs/12` §3's table keeps the **original** ordinals in column one on
+chapter's brief, **22 to 23 when the Priya milestone's premise check found the channel routes
+contradicting FR-USR-01 and ADR-18 on thirteen routes** (feature 068, chapter 4.22), and
+**23 to 24 when 4.22's own close found the gateway doing the same thing** — every client
+frame carries `channel: <uuid>`, so *"zero lookup tables"* holds on REST and not on the
+surface Journey 3's Stage 5 depends on (feature 070, chapter 4.23). Rule 4 says a milestone
+verifies rather than builds, so each fix is its own chapter placed BEFORE it.
+**Milestones are at 9, 17 and 24**, and the Priya milestone's number has moved twice —
+4.22, then 4.23, now 4.24 — which is why you name it and never number it.
+
+**AND TWO CHAPTERS IN A ROW CAME FROM THE PREVIOUS ONE'S FINDINGS, WHICH IS WORTH WATCHING.**
+4.22 exists because the milestone's premise check found something; 4.23 exists because
+4.22's response-shape sweep did. **A part that keeps growing from its own discoveries can
+stop converging** — the argument for taking this one anyway is that the gap is bounded and
+measured (7 frame schemas, 21 gateway sites, ~50 fence pages, one map at one edge) and that
+a milestone verifying a half-kept promise is worth less than one verifying a kept promise. `docs/12` §3's table keeps the **original** ordinals in column one on
 purpose so older references resolve, so reading that column as current is how a chapter number
 goes wrong; the movement column is the stable address. **Part 4 tags as `part4-chN`** —
 `rework/` was a Part 3 rebuild artefact and does not carry forward, and the 21 stale

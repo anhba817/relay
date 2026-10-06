@@ -1,4 +1,4 @@
-# Tasks — chapter 4.23, "★ Milestone: the Priya test"
+# Tasks — chapter 4.24, "★ Milestone: the Priya test"
 
 **Feature**: `specs/069-chapter-4-23/` · **Plan**: [plan.md](./plan.md) ·
 **Research**: [research.md](./research.md) · **Contract**: [contracts/journey.md](./contracts/journey.md)
@@ -129,7 +129,7 @@ ones that cannot be met.
 - [ ] T039 Add revision row **1.29** to `docs/04-srs.md`, stating what the chapter demonstrated and what it could not. **Newest LAST** — `check-revision-order` caught 1.28 inserted before 1.27 on the first run after the edit.
 - [ ] T040 **If T008 decided an ADR is needed, write it into BOTH homes** — the summary in `docs/05-sad.md` and the argument in `docs/06-adr-deep-dives.md`. 4.5 found an ADR lives in two documents and ten passes amended only the summary. **If no ADR, record that as DONE with the reason.**
 - [ ] T041 Amend `docs/05-sad.md` where this chapter changes what a section claims — **and check every sentence in the section you edit**. 4.21 found three of four erasure sentences false in sections a task naming one would have reached one.
-- [ ] T042 Amend **both** copies of the Part 4 table — `docs/12-part-4-structure.md` and `docs/07-tutorial-plan.md` — marking the milestone's row CLOSED and SHIPPED. **Match on the TITLE, never the ordinal.** Part 4 expanded to **23 chapters** when the identity fix was split out as its own chapter (feature 068), so the milestone is **chapter 4.23**, and `docs/12`'s first column is historical by design — its own header says the movement column is the stable address.
+- [ ] T042 Amend **both** copies of the Part 4 table — `docs/12-part-4-structure.md` and `docs/07-tutorial-plan.md` — marking the milestone's row CLOSED and SHIPPED. **Match on the TITLE, never the ordinal.** Part 4 expanded to **23 chapters** when the identity fix was split out as its own chapter (feature 068), so the milestone is **chapter 4.24**, and `docs/12`'s first column is historical by design — its own header says the movement column is the stable address.
 - [ ] T043 [P] Sweep `docs/` for feature-local ids **both ways**: diff-scoped and tree-wide, every hit classified. **Use `git diff <tag> -- docs/`, not `<tag>..HEAD`** — the two-dot form reads committed state and reported a confident **0** for 4.21 while two `FR-014`s sat in the working tree.
 - [ ] T044 Run `pnpm sync:docs` then `pnpm check:docs` from `relay-tutorial`.
 - [ ] T045 [P] Write `specs/069-chapter-4-23/traceability.md` by **reading**, not by grep — including the two sections a grep cannot produce: what is in the feature with no requirement behind it, and the clauses deliberately not amended.
@@ -172,7 +172,7 @@ ones that cannot be met.
 - [ ] T067 **Push submodules first, then the superproject** — `relay-platform`, then `relay-tutorial`, then the root. CI is the superproject's and the other two are submodules; the other order checks out gitlinks no remote has. **Confirm with the user before pushing.**
 - [ ] T068 Compare the CI error set **per error** against T004's baseline, in both directions, and record it (SC-010). **If both runs are green the diff carries nothing** — say so rather than presenting an empty diff as evidence.
 - [ ] T069 If CI is red, fix the platform, then **re-dump, re-hunk `relay-tutorial/fences/post-series.md` and push both** — repairing a platform file invalidates the appendix hunks that publish it, and `relay-tutorial`'s job goes red with nothing in that repository changed (060).
-- [ ] T070 Tag `part4-ch23` in `relay-platform` and the superproject, annotated, on a commit CI has proved green.
+- [ ] T070 Tag `part4-ch24` in `relay-platform` and the superproject, annotated, on a commit CI has proved green.
 - [ ] T071 **Write the `CLAUDE.md` entry under the new convention**, which 067 established: an entry older than the last four is cut to its headline, its measurement blocks, any paragraph carrying a gap id cited elsewhere, and a one-line digest of every other finding's claim. **Headroom was 57,886 after 067's compression** — this is the first chapter that does not have to fight for space, and the convention's cost should be re-measured rather than assumed to hold.
 - [ ] T072 Remove the active-plan line from between the `SPECKIT` markers in `CLAUDE.md` when the feature closes, leaving the markers and the note that explains why they span only that block.
 - [ ] T073 **Part 4 is finished at this chapter.** Record in `specs/069-chapter-4-23/baseline.txt` what the part cost end to end — 22 chapters, the movements, the tags — and whether `docs/12`'s §7 open questions are all closed or whether any outlived the part. **§7.6 was open at the start of this feature**; T011 decides whether it is this chapter's and this task records the outcome either way.

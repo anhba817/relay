@@ -1,4 +1,4 @@
-# Feature Specification: chapter 4.23, "★ Milestone: the Priya test"
+# Feature Specification: chapter 4.24, "★ Milestone: the Priya test"
 
 **Feature directory**: `specs/069-chapter-4-23/`
 **Created**: 2026-10-05
@@ -7,7 +7,27 @@
 `docs/03-journey-map.md` Journey 3 · `docs/04-srs.md` §7.3 Phase 3
 
 **Name a chapter, never number it.** `docs/12` §3's table keeps pre-contraction
-ordinals in column one on purpose: **row 23 is chapter 4.23**, one row after 4.21's.
+ordinals in column one on purpose. **This chapter is the Priya milestone and its
+number has moved twice** — 4.22, then 4.23, now **4.24** — each time because a
+premise check found work that `docs/12` §5 rule 4 says a milestone must not do
+itself. Name it by its movement and title.
+
+---
+
+## Clarifications
+
+### Session 2026-10-06
+
+- Q: Chapter 4.22 shipped and closed Stage 2's hole. What in this spec is now false?
+  → A: The stage table's `500`, the "no SRS clause requires the lookup" paragraph,
+  the resolution-by-write claim, FR-003 and FR-004's standing, and SC-008's
+  predecessor tag. All corrected; FR-CHN-11 and ADR-38 are the clauses that replaced
+  this feature's own.
+- Q: Journey 3 promises *"zero lookup tables"*. After 4.22 that holds on REST and not
+  on the socket — every gateway frame carries `channel: <uuid>`. Does this milestone
+  absorb the gap or does it get its own chapter? → A: **Its own chapter, placed
+  before this one**, which is rule 4 for the second time in a row. This milestone
+  verifies; it does not build. Part 4 becomes 24 chapters and this one becomes 4.24.
 
 ---
 
@@ -33,25 +53,34 @@ Journey 3's six stages, walked against the composed api on 2026-10-05.
 | stage | what `docs/03` says Relay must provide | measured |
 |---|---|---|
 | 1 Ticket | external ids on users and channels | **200 / 201** |
-| 2 Locate | **channel retrieval by external ID** | **500** — see below |
+| 2 Locate | **channel retrieval by external ID** | **200** — chapter 4.22 |
 | 3 Reconstruct ★ | tombstones, edit history, sequence, history via API key | routes exist; see below |
 | 4 Judge | unambiguous timestamps (CON-04) | human work |
 | 5 Act | moderator delete, tenant ban, both in real time | **200** |
 | 6 Record | audit log with request id; erasure receipt | **200**, `request_id` present |
 
-**STAGE 2 IS THE HOLE AND IT IS NOT A MISSING FEATURE, IT IS A 500.**
-`GET /v1/channels/{externalId}` answers **500** where `GET /v1/channels/{uuid}`
-answers 200, because the route takes a uuid and an external id is not one — 058-3's
-caller-triggered internal error, on the one route this journey opens with. And **no
-SRS clause requires the lookup at all**: FR-CHN-01 creates a channel with a
-customer-supplied identifier, FR-CHN-02 makes *creation* idempotent on it, FR-CHN-08
-lists a user's channels. None of them says a channel can be read by it.
+**STAGE 2 WAS THE HOLE AND CHAPTER 4.22 FILLED IT.** When this premise check ran,
+`GET /v1/channels/{externalId}` answered **500** where `GET /v1/channels/{uuid}`
+answered 200 — 058-3's caller-triggered internal error, on the one route this journey
+opens with — and **no SRS clause required the lookup at all**. FR-CHN-01 creates a
+channel with a customer-supplied identifier, FR-CHN-02 makes *creation* idempotent on
+it, FR-CHN-08 lists a user's channels, and none of them said a channel could be read
+by it.
 
-**THE ONLY WORKING RESOLUTION IS A WRITE.** Re-POSTing the create with the same
-external id returns the same channel — measured, `same channel: True` — so a support
-tool resolving `order-88412` today performs a channel creation. That satisfies the
-journey's *"zero lookup tables"* and violates every expectation a reader has of a
-lookup.
+Measured after 4.22, 2026-10-06:
+
+    GET /v1/channels/{externalId}                 200    was 500
+    GET /v1/channels/{an identifier nobody used}  404    was 500
+    all 13 routes beneath the prefix, by identity  2xx
+
+**FR-CHN-11 is the clause that now requires it**, and **ADR-38** states the rule for
+the next noun. The milestone verifies this rather than asking for it — which is
+`docs/12` §5 rule 4 working as intended, and the whole reason 4.22 was split out and
+placed first.
+
+**AND THE RESOLUTION-BY-WRITE IS GONE WITH IT.** Re-POSTing the create with the same
+external id still returns the same channel, but it is no longer the only way to reach
+one: a support tool resolving `order-88412` performs a read.
 
 **AND AN APPLICATION CREDENTIAL CANNOT CREATE THE CONVERSATION IT INVESTIGATES.**
 A send as a `person` is refused: *"an application credential may send only as a bot
@@ -161,9 +190,12 @@ measurement or the clause behind it.
 - **FR-002**: Each assertion MUST name the chapter whose work it verifies, so that
   removing that chapter's work fails a named assertion.
 - **FR-003**: A conversation MUST be reachable from its customer-supplied channel
-  identifier without the caller holding a mapping of its own.
+  identifier without the caller holding a mapping of its own. **This verifies
+  FR-CHN-11** — it was this feature's own requirement when no SRS clause carried it,
+  and chapter 4.22 wrote the clause.
 - **FR-004**: Presenting a channel identifier that resolves to nothing MUST produce a
-  refusal that names the cause, never a 5xx.
+  refusal that names the cause, never a 5xx. **Also FR-CHN-11's**, and 058-3 is closed
+  16 to 0, so this is a regression guard rather than a new demand.
 - **FR-005**: Reconstruction MUST distinguish three outcomes for a message that is
   not visible: never sent, sent and deleted, sent and edited.
 - **FR-006**: A moderator action MUST reach a connected recipient and MUST appear in
@@ -214,8 +246,10 @@ measurement or the clause behind it.
 - **SC-007a**: Every capability Journey 3's *"What Relay must provide"* blocks assert
   is classified as holding or not, with the clause it cites or the absence of one —
   **every one of them**, published as a table with the counting unit stated — the claim is the predicate (*cited holds, uncited is a hole*), and the tally is an illustration of it.
-- **SC-008**: `git diff --name-only part4-ch21..HEAD` contains no file outside this
-  chapter's subject, tests and documents.
+- **SC-008**: `git diff --name-only part4-ch23 --` contains no file outside this
+  chapter's subject, tests and documents. **The predecessor tag moved twice** — 4.22
+  and then the socket chapter — and the **one-dot** form is deliberate: `..HEAD` reads
+  committed state and reports 0 while leaked ids sit in the working tree (067-3).
 - **SC-009**: The fence chain reports 0 and every tutorial gate exits 0.
 - **SC-010**: The CI error set is compared per error against the pre-chapter
   baseline, in both directions.

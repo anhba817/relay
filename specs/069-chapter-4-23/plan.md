@@ -1,4 +1,4 @@
-# Implementation Plan: chapter 4.23, "★ Milestone: the Priya test"
+# Implementation Plan: chapter 4.24, "★ Milestone: the Priya test"
 
 **Feature**: `specs/069-chapter-4-23/` · **Spec**: [spec.md](./spec.md) ·
 **Research**: [research.md](./research.md)
@@ -193,7 +193,7 @@ chapter owns it, revision 1.29, both Part 4 tables, an ADR if phase 2 said so.
 fences and hunks from the checker's own replay.
 
 **Phase 9 — the record and the close.** Battery, quickstart run, push, CI compared
-per error, tag `part4-ch23`.
+per error, tag `part4-ch24`.
 
 ## Complexity Tracking
 

@@ -1,4 +1,4 @@
-# Data model — chapter 4.23, "★ Milestone: the Priya test"
+# Data model — chapter 4.24, "★ Milestone: the Priya test"
 
 **No new table, no new column, no migration.** A milestone verifies; what this
 document models is the **traversal** — the six stages, what each needs, where it

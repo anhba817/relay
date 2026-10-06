@@ -1,5 +1,5 @@
 ================================================================================
-BASELINE — chapter 4.23, "★ Milestone: the Priya test" (feature 069)
+BASELINE — chapter 4.24, "★ Milestone: the Priya test" (feature 069)
 Every phase in the order its measurements were taken, wrong versions included.
 ================================================================================
 

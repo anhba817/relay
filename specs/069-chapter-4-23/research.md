@@ -1,4 +1,4 @@
-# Research — chapter 4.23, "★ Milestone: the Priya test"
+# Research — chapter 4.24, "★ Milestone: the Priya test"
 
 Every figure below was measured against the development lane and the composed api
 on 2026-10-05, before the plan was written.
