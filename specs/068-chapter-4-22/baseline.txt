@@ -568,3 +568,63 @@ second relay draining rows the test then could not see. **The probe and the lane
 want opposite machine states and nothing enforces either.** The fix is the same
 stop-by-name T060 already prescribes; the lesson is that recording a rule is not
 the same as it being checkable.
+
+PHASE 5 — THE RULE, WRITTEN DOWN
+================================================================================
+
+T027 · FR-CHN-11 — A NEW CLAUSE, NOT AN AMENDMENT
+--------------------------------------------------------------------------------
+    check:srs   245 -> 246 clause rows, 246 unique identifiers, no duplicates
+
+T003a's third prediction, confirmed exactly. FR-CHN runs 01 to 10 and none of
+them covers addressing: 01 takes the identifier at creation, 02 makes that
+creation idempotent on it, 08 is the listing. **Reading FR-CHN-01 as covering
+addressing would make a creation clause carry a retrieval rule**, which is why
+this is 11 and not a widening.
+
+AND CONSTITUTION VI's FIRST BULLET WAS MET LATE. *New behaviour gets a
+requirement first.* The clause is Phase 5 and the resolution was coded in Phase
+3; T027 said to write it before T013 merged. Nothing is pushed, so no published
+history carries the behaviour without the clause — but the ordering the bullet
+asks for is not the ordering that happened, and `clauses.md` says so rather than
+reporting the bullet met.
+
+T028 · clauses.md — TWELVE CLAUSES READ, NOT CITED
+--------------------------------------------------------------------------------
+Including the two that are not this chapter's: FR-TEN-05, which the first pipe
+nearly broke, and ADR-37, whose claim about this chapter's subject was false.
+Two are recorded as less than met — constitution VI's ordering above, and
+constitution V, which this chapter satisfies on the REST half and not the
+real-time one.
+
+T037 · ADR-38, IN BOTH HOMES
+--------------------------------------------------------------------------------
+`docs/06-adr-deep-dives.md` (the argument) and `docs/05-sad.md` (the summary).
+4.5's rule: an ADR lives in two documents and ten passes amended only the
+summary.
+
+AND IT LANDED IN THE WRONG PLACE TWICE BEFORE IT LANDED RIGHT. Anchored on
+ADR-37's heading, the insert went BEFORE it — 2615 against 2701, numbers
+descending in a file that ascends. Moved to after ADR-37's block. In the SAD it
+went after ADR-36 at 2466, which is where 34, 35 and 36 are, and **not** beside
+ADR-37 at line 730, which sits inside section 6 "Data view" for reasons nobody
+recorded.
+
+    docs/05-sad.md   ADR-34 2350 · ADR-35 2429 · ADR-36 2466 · ADR-38 2513
+                     ADR-37  730, alone, inside the data view
+
+So ADR-38 is placed with the run and ADR-37 is still the outlier. Moving it is a
+1,700-line relocation of a published document for no behavioural reason, and it
+is recorded for `gaps.md` rather than done here.
+
+T029 · THE RULE A FUTURE NOUN NEEDS
+--------------------------------------------------------------------------------
+Measured from `information_schema` rather than judged:
+
+    external_id present      channels · users
+    external_id absent       messages · media_objects · webhook_endpoints
+                             · environments
+
+So the second half of ADR-38's rule — *a noun with only a Relay identifier is
+addressed by that* — covers four nouns today, and the reason is a column rather
+than an opinion.

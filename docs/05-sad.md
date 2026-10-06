@@ -2508,3 +2508,33 @@ the exception unnecessary — ADR-35's own reversal condition, unchanged.
 *Every ADR above states its reversal condition or rejected alternatives. If a review
 disagrees with a decision, the productive move is to attack the driver, not the choice —
 the choices follow from D1–D8 fairly mechanically.*
+
+
+### ADR-38 — A noun with a customer-supplied identifier is addressed by it
+
+**Summary.** FR-USR-01 and ADR-18 say an end user's identity is whatever `external_id` the
+customer already had. This carries that to every noun: **a noun with a customer-supplied
+identifier is addressed by it, a noun with only a Relay identifier is addressed by that, and
+where both could name the same thing the customer's wins.** Exactly two tables carry one,
+measured from `information_schema` — `users` and `channels` — and the four that do not
+(`messages`, `media_objects`, `webhook_endpoints`, `environments`) are correctly addressed by
+uuid rather than by oversight.
+
+A uuid stays the foreign key, the ordering key and the primary key; a text primary key across
+216,922 messages costs more than it is worth. **There is one identity and one internal key, and
+only one of them belongs on the wire.** A key may stay on the wire where a route accepts it —
+the thirteen channel routes keep taking one, for 173 call sites' sake — and may not where none
+does, which is why `members[].user_id` is gone (FR-006).
+
+**Reversal condition.** If a noun ever needs a customer-supplied identifier that cannot be
+relied on to be unique within a tenant, the first half fails for that noun. Uniqueness is what
+makes an identity addressable:
+`channels_environment_id_external_id_unique` and `users_environment_id_external_id_unique` are
+the constraints this rests on.
+
+**What it does not cover.** The real-time surface still addresses channels by uuid — every
+gateway frame carries `channel: <uuid>` and a socket send goes to a door typed
+`z.string().uuid()`. `packages/protocol/src/internal.ts` states this principle two lines above
+that field and applies it to one of two.
+
+The argument is in `docs/06-adr-deep-dives.md`; this is the summary and that is the ADR.
