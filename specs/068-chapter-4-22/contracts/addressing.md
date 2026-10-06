@@ -49,6 +49,19 @@ fixed here.
 `@Param` string twice; what changes is what the documentation calls it, because
 `channelId` is now a misleading name for something that is usually not an id.
 
+## The clause behind it
+
+**There is none today, and that is a finding rather than an oversight by this
+contract.** FR-CHN-01 covers creating a channel with a customer-supplied identifier
+and FR-CHN-02 covers that creation being idempotent on it. **Nothing in FR-CHN-01
+through 10 says the identifier may then be used to name the channel.** `docs/03`
+Journey 3 Stage 2 asserts *"channel retrieval by external ID"* and cites no clause,
+which is the same gap seen from the journey's side.
+
+**FR-CHN-11 is what this contract is the contract for** (T027), written before the
+pipe, because constitution VI's first bullet says new behaviour gets a requirement
+first.
+
 ## Refusals
 
 | condition | status | code |
@@ -75,7 +88,7 @@ chapter a value that cannot be a uuid is never cast, so the error cannot arise.
 
 ## What a client sees that is new
 
-**Nothing, unless it chooses to.** The 157 existing call sites that pass a uuid take
+**Nothing, unless it chooses to.** The 173 existing call sites that pass a uuid take
 the same path they take today, by construction (R2's shape test). No response shape
 changes, no header, no status for any input that works now.
 
@@ -115,7 +128,7 @@ to decide.
 
 ## What this contract does not offer
 
-- **No deprecation of the uuid.** 157 call sites and every published client hold
+- **No deprecation of the uuid.** 173 call sites and every published client hold
   one. A window, a warning and a version belong to a later chapter.
 - **No change to the other four nouns.** Messages, media objects, webhooks and
   environments have no customer identifier to honour.

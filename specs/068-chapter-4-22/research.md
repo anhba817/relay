@@ -92,7 +92,7 @@ one query, explicit preference
   order by (external_id = $2) desc limit 1
 
 identity first, then the key
-  two round trips on every uuid-shaped value, which is all 157 existing call
+  two round trips on every uuid-shaped value, which is all 173 existing call
   sites — the cost R2 rejected "B everywhere" for
 ```
 
@@ -109,7 +109,7 @@ Limit → Sort → Bitmap Heap Scan on channels          shared hit=11   0.068 m
 ```
 
 **Both arms are index scans with real conditions**; neither degrades. One query and
-about eleven buffers against three for a single lookup, which is what not making 157
+about eleven buffers against three for a single lookup, which is what not making 173
 call sites pay a second round trip costs.
 
 **TWO THINGS THE PLAN SAYS THAT THE TIMINGS DO NOT.** The cast `$2::uuid` is still
@@ -136,20 +136,40 @@ disagreeing with themselves.**
 strands a customer. *Refuse ambiguity with a 409* — honest, and it turns a working
 call into a broken one for a customer who did nothing wrong.
 
-## R3 — 157 existing call sites, and the design must not touch any of them
+## R3 — 173 existing call sites, and the design must not touch any of them
+
+**The method, because the first version of this section published a number nothing
+reproduces.** `grep -rhoE '/v1/channels/\$\{[^}]+\}' --include=*.ts <scope>`, from
+`relay-platform/`:
 
 ```
-/v1/channels/${channelId}        55        /v1/channels/${privateChannelId}   8
-/v1/channels/${channel}          24        /v1/channels/${t.victim.channelId} 7
-/v1/channels/${api.channelId}    11        /v1/channels/${rejectId}           7
-/v1/channels/${c}                10        … and the rest
-                                 ---
-                                 157 across the test corpus
+services/api/src        121        /v1/channels/${channelId}           55
+services/gateway         27        /v1/channels/${channel}             24
+services/dispatcher       0        /v1/channels/${api.channelId}       11
+packages                 25        /v1/channels/${c}                   10
+                        ---        /v1/channels/${privateChannelId}     8
+whole repository        173        /v1/channels/${channel.id}           8
+across 22 files                    /v1/channels/${t.victim.channelId}   7
+                                   /v1/channels/${rejectId}             7
+                                   … and the rest
 ```
 
-Every one passes a uuid. **FR-002 is not politeness, it is 157 assertions**, and any
+Every one passes a uuid. **FR-002 is not politeness, it is 173 assertions**, and any
 design that changes what a uuid does breaks the suite that proves the chapter did no
 harm. Under R2's decision they all take the same path they take today.
+
+**THE FIRST COUNT SAID 157 AND NO SCOPE PRODUCES IT.** Measured at analysis pass 7
+against an unmoved tree — `relay-platform` HEAD is `0c614396`, 4.21's last commit, so
+this is not drift. 121, 148, 167 and 173 are what the plausible scopes give; the top
+five expressions match the original table exactly, so the pattern was the same and
+the corpus was not. **The number had reached sixteen places in five artifacts before
+anyone tried to reproduce it.**
+
+The conclusion never depended on it — every call site passes a uuid whether there are
+157 or 173 — which is precisely why it survived six passes. **R6 learned this at pass
+3 and wrote its method down; this section is the same lesson arriving late**, and the
+rule both now carry is that a count without a reproducible scope is a count that
+moves.
 
 ## R4 — Where the resolution belongs, and the cheapest place cannot work
 
@@ -373,7 +393,7 @@ written down. **A count nobody can reproduce is a count that moves.**
 
 ## R7 — What this chapter must not do
 
-**It must not remove the uuid.** 157 call sites and every published client depend on
+**It must not remove the uuid.** 173 call sites and every published client depend on
 it, and a deprecation needs a window, a warning and a version — none of which belongs
 in a chapter whose subject is making the identity work.
 

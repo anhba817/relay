@@ -106,7 +106,7 @@ between a platform that refuses and one that breaks.
 - **The collision.** An `external_id` that is itself a uuid is legal and **0 of
   41,772** channels have one, so the tie-break is a constructed test and not an
   observed case.
-- **Whether the uuid is ever retired.** 157 call sites hold one. Not this chapter.
+- **Whether the uuid is ever retired.** 173 call sites hold one. Not this chapter.
 - **US2's sweep.** *Does any internal key reach a customer?* is an audit of every
   response shape, not a curl, so it lives in the chapter and in T026 rather than
   here. The count it produces is SC-006.

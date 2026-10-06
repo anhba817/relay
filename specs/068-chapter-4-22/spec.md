@@ -184,8 +184,10 @@ identifier addresses each noun and why.
 - **FR-007**: If the chapter changes what an opaque token carries, one issued before
   it MUST keep working or be refused with a named cause. **Conditional on FR-006's
   sweep finding something to change.**
-- **FR-008**: The specification MUST state which identifier addresses a noun and on
-  what basis, so a future noun is decided rather than guessed.
+- **FR-008**: The SRS MUST carry a clause stating which identifier addresses a noun
+  and on what basis, so a future noun is decided rather than guessed. **A new clause,
+  FR-CHN-11**: FR-CHN runs 01 to 10 and none of them covers addressing, so this
+  chapter's behaviour has no requirement until one is written.
 - **FR-009**: Nothing outside this chapter's subject may change behaviour.
 - **FR-010**: Where measurement falsifies a published clause or document, the document
   MUST be amended rather than left to diverge.

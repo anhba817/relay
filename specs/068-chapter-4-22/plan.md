@@ -32,7 +32,7 @@ sweeps for a real leak rather than closing the named one.
 | **The mechanism** | an injectable pipe resolving `:channelId` at the boundary (R4) |
 | **Resolution order** | shape-based; **the identity wins the tie** — the procedure is T009's, two candidates priced (R2) |
 | **Blast radius** | **7 files, 101 fence pages, 17 appendix blocks / 66 hunks** (R6) — 84, then 107/9, then 88/6, now measured with its method written down; the move is `gauntlet.itest.ts`, which T031 edits |
-| **Regression surface** | **157 existing call sites** pass a uuid and must not change (R3) |
+| **Regression surface** | **173 existing call sites** pass a uuid and must not change — counted with its scope stated, after the first figure of 157 proved unreproducible (R3) |
 | **Added cost** | **one scoped `SELECT` per request on all 13 routes** — the handler's own read is not replaced. Measured at T023a (R4) |
 | **Unknowns** | **whether any internal key reaches a customer at all** — FR-006's sweep, Phase 4 |
 
@@ -83,8 +83,14 @@ than the journey.
 
 ### VI. Requirement-driven — **FIVE BULLETS, FOUR ENGAGED**
 
-1. *New behaviour gets a requirement first.* **FR-CHN gains a clause before the pipe
-   is written**, not after — the ordering is a task, not a courtesy.
+1. *New behaviour gets a requirement first.* **FR-CHN-11 is written before the pipe
+   is**, not after — the ordering is a task (T027), not a courtesy. **And it is a new
+   clause rather than an amendment**: FR-CHN runs 01 to 10 and none of them says a
+   channel can be addressed by its customer identifier (analysis pass 7, which opened
+   the SRS). Creation takes the identifier, creation is idempotent on it, and nothing
+   says you may then name the channel by it. **So the behaviour has no requirement
+   today**, which is what this bullet forbids, and widening a creation clause to carry
+   a retrieval rule would hide that rather than fix it.
 2. *100% branch coverage for tenant isolation.* The resolution's tenancy arm is in
    that population the moment it exists, **and that beats the ratchet's "pin below
    the measured value" for this one file** (T033a). The two rules contradicted each
@@ -172,7 +178,7 @@ the checker's own replay.
 | thing | why justified | what would make it unjustified |
 |---|---|---|
 | 101 fence pages on one chapter | 13 routes contradict two clauses and a journey; the alternative was a milestone that builds, which rule 4 forbids | if the pipe turns out not to reach all 13, the design is wrong rather than the budget |
-| Accepting two identifier forms | 157 call sites and every published client hold uuids | if a deprecation is ever wanted it is a later chapter with a window and a warning |
+| Accepting two identifier forms | 173 call sites and every published client hold uuids | if a deprecation is ever wanted it is a later chapter with a window and a warning |
 | Touching `users` at all | a published ADR is falsified and FR-010 requires the amendment; and nobody has yet asked whether an internal key reaches a customer | if the sweep finds nothing and the ADR is amended, US2 is done — do not invent an edit to justify the phase |
 
 ## What this plan does not decide
@@ -182,7 +188,7 @@ the checker's own replay.
   to leave it alone.
 - **The procedure behind the tie-break.** The outcome is settled — the identity wins.
   One query with an `order by` preference needs `EXPLAIN` before it is chosen (4.18);
-  identity-first costs a second round trip on all 157 uuid call sites. T009.
+  identity-first costs a second round trip on all 173 uuid call sites. T009.
 - **Whether an ADR is written.** Predicted yes, checked at Phase 2.
 - **Whether the 500's swallowed cause is ever fixed.** R1 found it, 058-3 counts 22
   routes, and fixing one of 22 is worse than recording the class.
