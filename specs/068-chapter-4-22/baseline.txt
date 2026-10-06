@@ -190,3 +190,38 @@ analysis pass 9: 41,772 channels, 0 uuid-shaped, 1,597 reused user external ids,
 because T006 says "re-measure" and does not say "and update the nine places that
 quote it"; this time the sweep had nothing to do, which is the outcome it should
 report rather than skip.
+
+T001 (continued) · THE NATS RECOVERY, AND WHAT IT COST
+--------------------------------------------------------------------------------
+Asked rather than decided: every recovery deletes on-disk stream state. What the
+measurement showed before the decision:
+
+    ANALYTICS   63.8 MB   unrecoverable, named by /healthz
+    EVENTS       3.9 MB   on disk and NOT LOADED — the live account held neither
+    DELIVERIES    64 KB   59 messages, healthy
+    jsz          streams: 1 of 3
+
+THE HEALTH CHECK NAMES ONE UNRECOVERABLE STREAM AT A TIME (058), so ANALYTICS was
+the only one reported while EVENTS was equally absent. **A health check that
+names one fault is not a health check that found one fault** — `jsz` is what
+said 1 of 3, and the two instruments disagreed about the size of the problem.
+
+The loss was bounded before the question was asked: ClickHouse already holds
+244,972 `api_requests` rows, so ANALYTICS was a drained transport buffer rather
+than the only copy.
+
+Decision: recreate the whole volume.
+
+    docker compose stop nats && docker compose rm -f nats
+    docker volume rm relay_nats-data          # NOT relay-platform_nats-data
+    docker compose up -d --wait nats          EXIT 0, {"status":"ok"}
+    jsz  streams: 0 consumers: 0 messages: 0
+
+AND THE VOLUME IS NAMED FOR A PROJECT THIS DIRECTORY IS NOT CALLED. Compose
+derives the prefix from the project name `relay`, not from the directory
+`relay-platform`, so the obvious `relay-platform_nats-data` answers `no such
+volume` and the real one is `relay_nats-data`. One wrong guess, recorded because
+the error message is the only thing that distinguishes them.
+
+Infra is green on all seven containers. The streams are 0 and stay 0 until the
+api boots: nothing in the infra profile creates them.
