@@ -831,3 +831,84 @@ T042 · THE GATES, AFTER
     check:srs      EXIT 0   246 clause rows, 246 unique identifiers
     check:figures  EXIT 0   326 figures, 328 bindings resolve, 3 unused
     check:errors   EXIT 0   34 codes, 34 sections, 6 close codes
+
+T043 · TRACEABILITY
+--------------------------------------------------------------------------------
+Written by reading. Its two useful sections are the ones a grep cannot produce:
+four things in the feature with no requirement behind them — including
+`UuidParamPipe`, where **the requirement followed the work** and FR-004 and
+SC-003 were widened afterwards to match what was built — and six things
+deliberately not amended.
+
+PHASE 8 — THE CHAPTER
+================================================================================
+
+T044 · REGISTERED
+--------------------------------------------------------------------------------
+`lib/tutorial.ts`, id 4.22, no `milestone-` prefix. **The type refused the first
+entry** — `sourceDoc` and `readerMinutes` are required and I wrote neither, so
+`tsc` named them before `pnpm build` ran. 051's `Error: Unknown chapter id: 4.6`
+did not recur; the manifest took it.
+
+T045–T051 · THE CHAPTER
+--------------------------------------------------------------------------------
+    3,147 prose words        the bound is 2,000–4,000, counted outside
+                             fences and tables
+    4 figures                passed as `code`, never `chart`
+    2 TRAP · 2 WHY
+    0 titled fences          4.19, 4.20 and 4.21 each contributed 0
+
+It opens on the 500, which is `docs/07` §4 rule 1 — failure before machinery —
+and the failure is one command on the identifier a reader just chose. The TRAP
+boxes are the unlogged cause and the choice of a random uuid over a nil one; the
+WHY boxes are the heap-recheck tenancy that reads like a leak and is not, and
+why the clause is new rather than an amendment.
+
+    check:figures   326 -> 330 figures, 332 bindings resolve
+                    3 export(s) unused, UNCHANGED — all four new ones are named
+
+T052–T053a · THE HUNKS, AND THE BILL AGAINST THE OUTCOME
+--------------------------------------------------------------------------------
+Generated from `check:fences --dump` rather than from the working tree, which is
+fence-chain rule 1a. **23 hunks across 9 files**, against a bill that predicted
+8:
+
+    predicted and real     repository.ts · messages.controller.ts
+                           users.controller.ts · gauntlet.itest.ts
+                           channels.controller.ts · media/media.controller.ts
+    predicted, NOT TOUCHED users.schema.ts
+    NOT PREDICTED          channels.service.ts · compose.yaml
+                           vitest.coverage.config.mts
+
+**The three surprises are all real work the bill could not have seen.**
+`users.schema.ts` was the cursor the sweep found did not need changing;
+`channels.service.ts` is where the removal actually landed; `compose.yaml` is
+the NATS replica fix; `vitest.coverage.config.mts` is the four pins. Every one
+arrived from RUNNING something rather than reading it, which is 4.15's rule
+holding in the direction it always holds.
+
+**Three files needed their FIRST appendix block** — `channels.controller.ts`,
+`media/media.controller.ts` and `compose.yaml` — exactly the three T053a named.
+Each is fenced in chapter pages and nothing had changed it since.
+
+T054 · ALL SIX GATES, AFTER
+--------------------------------------------------------------------------------
+    check:fences   EXIT 0   291 fenced files across 65 chapters
+    check:figures  EXIT 0   330 figures, 332 bindings, 3 unused
+    check:docs     EXIT 0   30 revisions ascend, 1.0 to 1.29
+    check:srs      EXIT 0   246 clause rows, 246 unique identifiers
+    check:errors   EXIT 0   34 codes, 34 sections, 6 close codes
+    pnpm build     EXIT 0   the manifest took 4.22
+
+**ALL FOUR PREDICTED DELTAS LANDED EXACTLY** (T003a, written in Phase 1 before
+a line of code):
+
+    check:fences  chapters   64 -> 65    the walker found the page
+    check:fences  files     291 -> 291   the chapter titled no fence
+    check:docs    revisions  29 -> 30    1.29
+    check:srs     rows      245 -> 246   FR-CHN-11, and unique
+
+Four predictions, four hits. The value is not that they were right — it is that
+a wrong one would have named its own cause: a chapter count that did not move
+means the page was never found, and a file count that moved means a fence got a
+title it should not have.
