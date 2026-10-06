@@ -104,7 +104,7 @@ between a platform that refuses and one that breaks.
 - **Whether a customer stops keeping a lookup table.** The chapter removes the need;
   whether anyone's tool changes is theirs to decide.
 - **The collision.** An `external_id` that is itself a uuid is legal and **0 of
-  41,768** channels have one, so the tie-break is a constructed test and not an
+  41,772** channels have one, so the tie-break is a constructed test and not an
   observed case.
 - **Whether the uuid is ever retired.** 157 call sites hold one. Not this chapter.
 - **US2's sweep.** *Does any internal key reach a customer?* is an audit of every

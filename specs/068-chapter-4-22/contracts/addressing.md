@@ -81,7 +81,7 @@ changes, no header, no status for any input that works now.
 
 ## The ambiguous input
 
-An `external_id` may itself be a uuid — legal, and **0 of 41,768 channels have one**.
+An `external_id` may itself be a uuid — legal, and **0 of 41,772 channels have one**.
 When a path segment parses as a uuid and both spaces could answer:
 
 **The identity wins a true tie**, because a customer who named a channel must be able

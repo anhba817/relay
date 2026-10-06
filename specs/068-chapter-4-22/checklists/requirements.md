@@ -40,7 +40,7 @@ by preference.
 
 **THE SPEC NAMES NO ROUTE COUNT IT DID NOT COUNT.** 13 channel routes and 8 user
 routes come from a sweep of every `@Controller`/`@Param` pair, printed in full before
-the spec was written. 41,768 channels with 0 uuid-shaped identifiers is a query.
+the spec was written. 41,772 channels with 0 uuid-shaped identifiers is a query.
 
 **ONE ITEM CARRIES A JUDGEMENT A PLANNER MAY OVERTURN.** *Scope is clearly bounded*
 is marked complete, and FR-002 — keep accepting the Relay identifier — is the reason
@@ -52,7 +52,7 @@ so the plan can refuse it in one place.
 **WHAT THIS SPEC DELIBERATELY DOES NOT DECIDE.** The resolution order when a
 customer's identifier is itself a uuid. FR-003 requires that it be defined, documented
 and tested; it does not say which way. The measurement that bears on it is in the
-spec — **0 of 41,768** — and the decision belongs with the cost of each order, which
+spec — **0 of 41,772** — and the decision belongs with the cost of each order, which
 is `/speckit-plan`'s research.
 
 ## Re-validated 2026-10-05 after four analysis passes

@@ -34,24 +34,34 @@ this chapter's, and 058-3 already counts 22 routes that can produce one.
 
 ## R2 — The resolution order is a correctness question, because the cost is a tie
 
-Both lookups are single index hits, measured with `EXPLAIN (ANALYZE, BUFFERS)`:
+Both lookups are single index hits. Two runs a day apart, `EXPLAIN (ANALYZE,
+BUFFERS)` both times:
 
 ```
+                                              2026-10-05        2026-10-06 warm
 WHERE environment_id = $1 AND id = $2
-  Index Scan using channels_pkey            2 shared hit + 1 read   1.475 ms
+  Index Scan using channels_pkey              1.475 ms          0.364 ms
+  Filter: (environment_id = ...)              2 hit + 1 read    1 hit + 2 read
 WHERE environment_id = $1 AND external_id = $2
-  Index Scan using channels_environment_id_external_id_unique
-                                            3 shared hit + 1 read   1.094 ms
+  Index Scan using …_external_id_unique       1.094 ms          0.675 ms
+                                              3 hit + 1 read    1 hit + 3 read
 ```
 
-**THE IDENTITY LOOKUP IS MARGINALLY CHEAPER THAN THE KEY LOOKUP**, which is the
-opposite of what a reader expects from a primary key. The composite index carries the
-environment, so it answers the scoped question in one search where the primary key
-answers an unscoped one and then filters. The difference is inside the run-to-run
-spread and **the point is that there is no performance argument either way.**
+**THE ORDERING REVERSED BETWEEN THE TWO RUNS**, which is the finding rather than
+either number: the first said the identity lookup was cheaper, the second says the
+key lookup is, by a similar margin. The first run's own sentence already said the
+difference sat inside the run-to-run spread, and the reversal is what that sentence
+predicts. **There is no performance argument either way, and the two figures are not
+two samples of one quantity** — the second was taken on a warm cache and the first
+was not. Resolving a difference this size needs a method, and the decision does not
+need one.
+
+**What is stable across both**: the composite index carries the environment and
+answers the scoped question in one search; the primary key answers an unscoped one
+and filters.
 
 **SO THE ORDER IS DECIDED BY WHICH COLLISION IS WORSE.** An `external_id` may itself
-be a uuid — `z.string().min(1).max(255)` permits it — and measured, **0 of 41,768
+be a uuid — `z.string().min(1).max(255)` permits it — and measured, **0 of 41,772
 channels have a uuid-shaped identifier and 0 have one equal to their own row id.**
 
 | | order | the collision case | consequence |
@@ -80,13 +90,37 @@ candidates deliver identity-wins:
 one query, explicit preference
   where environment_id = $1 and (external_id = $2 or id = $2::uuid)
   order by (external_id = $2) desc limit 1
-     one round trip. 4.18 found an `OR` can land in a `Filter:` instead of an
-     `Index Cond`, so this needs EXPLAIN before it is chosen, not after
 
 identity first, then the key
   two round trips on every uuid-shaped value, which is all 157 existing call
   sites — the cost R2 rejected "B everywhere" for
 ```
+
+**THE ONE-QUERY FORM WAS MEASURED, AND 4.18's WORRY DOES NOT MATERIALISE.** That
+chapter found a keyset cursor written as an `OR` landing in a `Filter:` and re-walking
+every earlier page. Here, against 41,772 channels, warm:
+
+```
+Limit → Sort → Bitmap Heap Scan on channels          shared hit=11   0.068 ms
+  Sort Key: ((external_id = $2)) DESC
+  BitmapOr
+    Bitmap Index Scan on …_environment_id_external_id_unique   Index Cond ✓
+    Bitmap Index Scan on channels_pkey                         Index Cond ✓
+```
+
+**Both arms are index scans with real conditions**; neither degrades. One query and
+about eleven buffers against three for a single lookup, which is what not making 157
+call sites pay a second round trip costs.
+
+**TWO THINGS THE PLAN SAYS THAT THE TIMINGS DO NOT.** The cast `$2::uuid` is still
+in it, so this form is reachable only behind the shape test — A for anything that
+cannot be a uuid, C for anything that can, which is what removes the 500. And **the
+key arm's tenancy is enforced at the heap recheck rather than in its index
+condition**: a foreign tenant's row can enter the bitmap and is filtered on the heap.
+That looks like a leak and is not — the plain `channels_pkey` lookup the platform
+runs today does exactly the same thing, `Filter: (environment_id = …)`, which is in
+the table above. Written down because the next person to read this plan will reach
+for the alarm.
 
 **What this section said before.** It tabled C as *"parse as a uuid → try key then
 identity"*, gave its collision consequence as *"the same as A"* — and A is *"they can
@@ -261,20 +295,44 @@ an erased row names nobody — stands, and its one bounded exception turns out n
 exist. The reversal condition holds with **zero known live edges**. FR-010 makes the
 amendment this chapter's work, in both homes.
 
-**WHAT IS NOW OPEN.** *Where, if anywhere, does `users.id` reach a caller?* The
-sweep this pass started is not an answer: `users.id` is selected at eight sites in
-`repository.ts` and every one read so far is internal, with the services stripping it
-before the wire — consistent with the upsert response above, and **a reading rather
-than a measurement**, taken while the lane was down. Two near misses worth recording
-because each looked like the leak for a minute:
+**AND THE REAL ONE IS 4.21's TOMBSTONE, MEASURED WHEN THE LANE CAME BACK UP.**
+Pass 3 read the code with Postgres down and concluded every `users.id` was stripped
+before the wire. Pass 6 asked the database:
+
+```
+users                                                      203,854
+with external_id LIKE 'erased:%'                               367
+with external_id = 'erased:' || id::text                       367   all of them
+messages authored by an erased user                            290   retained, FR-USR-05
+members rows held by an erased user                              0   erasure removes them
+repository.ts:6865   listMessages selects   user: users.externalId
+```
+
+**So a customer reading history on 290 messages receives `user: "erased:<a Relay
+uuid>"`** — a `users.id`, in the field FR-USR-01 reserves for the customer's own
+string, on the history route this chapter is widening.
+
+**ADR-37's OWN ARGUMENT DISPOSES OF IT, WHICH IS WHY THIS MAKES THE AMENDMENT
+STRONGER RATHER THAN BLOCKING IT.** *A key into an erased row names nobody*: the row
+is empty, the uuid resolves to a tombstone, and the reversal condition asks whether
+`users.id` becomes resolvable **to a person**. It does not. The value is also
+accepted by every user route, so FR-006's own test does not reach it either.
+
+**An exception a reader can check beats a claim of none.** T026a deletes the
+`GET /v1/users` cursor that does not exist and puts this in its place.
+
+**And a reading is not a measurement, which is the shape of the whole entry.** Pass
+3's sweep was careful, said so, and was wrong by 367 rows. Two near misses from that
+pass survive because each cost a minute and will cost the next reader the same:
 
 ```
 channel listing, last_message.user.id   = user_external_id, not users.id   :4908
 upsertUser's returned row carries id    stripped by the service before the wire
 ```
 
-SC-006 asks for the count. It was a formality while the leak was known; it is the
-question now, and T026 is where US2 finds out whether it has a subject at all.
+SC-006 asks for the count. **It is 367 identities and 290 message rows before T026
+runs**, and T026's job is now to find what else there is rather than whether there is
+anything.
 
 ## R6 — What the fence chain charges, counted now, with the method written down
 

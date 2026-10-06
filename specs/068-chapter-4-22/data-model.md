@@ -66,7 +66,7 @@ plus an environment filter. There is no performance argument for either order.
 An `external_id` is `z.string().min(1).max(255)` and may be a uuid. Measured:
 
 ```
-channels                                           41,768
+channels                                           41,772
 with a uuid-shaped external_id                          0
 with an external_id equal to their own row id           0
 ```

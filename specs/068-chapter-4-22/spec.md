@@ -143,11 +143,11 @@ identifier addresses each noun and why.
 ### Edge Cases
 
 - **A customer identifier that is itself a uuid.** Legal today — `external_id` is any
-  string up to 255 characters. Measured: **0 of 41,768** channels have one. The
+  string up to 255 characters. Measured: **0 of 41,772** channels have one. The
   resolution order must be decided and tested rather than left to chance.
 - **A channel whose identifier contains a slash or a percent sign.** It is a path
   segment now, where before it was only a request body.
-- **The same identifier in two environments.** 1,576 external ids are reused across
+- **The same identifier in two environments.** 1,597 external ids are reused across
   environments in `users`; resolution must be tenant-scoped like every other read.
 - **A uuid that is a valid uuid and names nothing.** Must stay a 404, not become a 500.
 - **An archived or deleted channel** reached by its identifier — the same answer the
