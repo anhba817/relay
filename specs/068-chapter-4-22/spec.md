@@ -159,8 +159,13 @@ identifier addresses each noun and why.
 
 ### Functional Requirements
 
-- **FR-001**: Every route naming a channel MUST accept the customer-supplied
-  identifier for that channel.
+- **FR-001**: Every **public** route naming a channel in its path MUST accept the
+  customer-supplied identifier for that channel — the thirteen in
+  `contracts/addressing.md`. **The internal doors keep requiring the Relay
+  identifier**: `POST /internal/messages`, `/internal/backfill` and
+  `/internal/dispatch/*` are gateway and dispatcher surfaces, and
+  `packages/protocol/src/internal.ts` says *"internal uuids are the api's business"*
+  about that contract already.
 - **FR-002**: Every such route MUST continue to accept the Relay identifier it accepts
   today, with unchanged behaviour.
 - **FR-003**: Where both could match, the resolution order MUST be defined, documented
@@ -216,8 +221,10 @@ identifier addresses each noun and why.
 - **SC-006**: Every response shape the user surface can return is enumerated and the
   internal keys among them counted, **with the count stated whether it is zero or
   not**, and each one disposed of.
-- **SC-007**: Journey 3 Stage 2 completes with the order number alone, which chapter
-  4.23's milestone then asserts end to end.
+- **SC-007**: Journey 3 **Stage 2** completes with the order number alone, which
+  chapter 4.23's milestone then asserts. **Stage 5 is not in this claim**: it reaches
+  the real-time surface (FR-RTM-05), where every frame still carries a channel uuid —
+  recorded as a limitation rather than fixed.
 - **SC-008**: `git diff --name-only part4-ch21 --` contains no file outside this
   chapter's subject, tests and documents. **One dot form, not two**: `..HEAD` reads
   committed state and reported a confident 0 for 4.21 while two leaked ids sat in the

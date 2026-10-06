@@ -25,6 +25,25 @@ PUT    /v1/users/{externalId}/channels/{channel}/read
 these paths is unchanged: `{userExternalId}` was already an identity and
 `{messageId}` is a key with no identity to offer.
 
+**AND THIS LIST IS THE WHOLE OF IT, WHICH IS NARROWER THAN FR-001's FIRST WORDING.**
+Three internal doors also name a channel and are deliberately excluded:
+
+| route | names a channel in | stays a uuid because |
+|---|---|---|
+| `POST /internal/messages` | body `channel_id` | the gateway's send door; `internal.ts:28` types it `z.string().uuid()` |
+| `POST /internal/backfill` | body `channel` | the same contract, the same reason |
+| `POST /internal/dispatch/expand` | body `channel` | the dispatcher's, not a customer's |
+
+`packages/protocol/src/internal.ts` states the rule for that contract itself —
+*"internal uuids are the api's business"* — so this is the published position rather
+than an omission.
+
+**AND THE REAL-TIME SURFACE IS NOT IN THIS CONTRACT AT ALL.** Every client frame
+carries `channel: <uuid>`, and the session response hands a connecting client a list
+of channel uuids. A customer on the socket still keeps the mapping this chapter
+removes from REST. That is published as a limitation (T050) and handed to 4.23, not
+fixed here.
+
 **THE PATH PARAMETER IS RENAMED IN THE DOCUMENTATION AND NOT IN THE CODE.**
 `:channelId` stays as the route token because renaming it would touch every
 `@Param` string twice; what changes is what the documentation calls it, because

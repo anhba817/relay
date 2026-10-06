@@ -40,14 +40,6 @@ sweeps for a real leak rather than closing the named one.
 
 Read clause by clause, because a principle's bullets do not get one verdict.
 
-### V-ERRATUM. The no-5xx claim is about the CHANNEL SEGMENT
-
-Three of the thirteen routes take a `:messageId` that reaches `messages.id`, a uuid
-column with no shape check, so `…/messages/not-a-uuid` is a 500 the pipe does not
-touch. **SC-003 and FR-004 are scoped to the channel segment** and the exclusion is
-asserted (T020b) and published (T050). Fixing three of 058-3's sixteen routes is the
-shape that chapter already refused.
-
 ### I. Tenant isolation — **ENGAGED, AND IT IS THE REASON THE CHEAP DESIGN LOSES**
 
 A middleware would have been 13 pages cheaper and Nest runs it **before guards**, so
@@ -69,6 +61,25 @@ test red; if it does not, the test is missing.
 ### V. API-first — **ENGAGED, AND THIS CHAPTER IS ITS REPAIR.** FR-USR-01 and ADR-18
 say the customer's string is the identity. Thirteen routes disagree. Nothing about
 this chapter is new product; it is the API matching its own specification.
+
+### V-ERRATA. Two claims that are narrower than they first read
+
+**The no-5xx claim is about the CHANNEL SEGMENT.** Three of the thirteen routes take
+a `:messageId` that reaches `messages.id`, a uuid column with no shape check, so
+`…/messages/not-a-uuid` is a 500 the pipe does not touch. **SC-003 and FR-004 are
+scoped to the channel segment**, the exclusion is asserted (T020b) and published
+(T050), and fixing three of 058-3's sixteen routes is the shape that chapter already
+refused.
+
+**And the identity claim is about the PUBLIC PATH SURFACE.** Three internal doors
+name a channel in a body and keep the uuid by published position; and **every
+real-time frame still carries one**, so a customer holding a socket keeps the lookup
+table this chapter removes from REST. The second is the bigger gap and the one most
+visible to a reader: it is the gateway, `subjectForChannel`, the resume cursors and
+the internal contract, which is a chapter. **V says the API is the product, and after
+this one half of the product speaks the customer's language and half does not** —
+published (T050), handed to 4.23 (T069), and the reason SC-007 names Stage 2 rather
+than the journey.
 
 ### VI. Requirement-driven — **FIVE BULLETS, FOUR ENGAGED**
 

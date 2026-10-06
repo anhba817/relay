@@ -83,7 +83,9 @@ curl -s -o /dev/null -w '  POST   /v1/channels/$ORD/messages%{http_code}\n' \
 ```
 
 **Expected after the chapter**: 200 on every line of the loop and **201** on the
-send, with the customer never having seen a uuid. **The send was promised by this
+send, **with the customer never having seen a uuid on any of these calls**. The
+qualifier is load-bearing — a client holding a WebSocket still receives channel uuids
+in every frame, which §5 records. **The send was promised by this
 section's prose and absent from its script for three analysis passes** — a prediction
 nothing would have produced.
 
@@ -111,3 +113,10 @@ between a platform that refuses and one that breaks.
 - **The `:messageId` 500.** `…/messages/not-a-uuid` still answers 500 on three of
   these routes. The claim this quickstart demonstrates is about the channel
   segment.
+- **The real-time surface.** Every frame the gateway sends carries `channel:
+  <uuid>`, the session response hands a connecting client a list of channel uuids,
+  and a socket send is forwarded to a door that requires one. **So the lookup table
+  this chapter removes from REST is still needed by anyone holding a socket** — on
+  Journey 3's Stage 5, which is the same journey that promises zero of them. Not this
+  chapter's to fix: it is the gateway, the fanout subjects, the resume cursors and
+  the internal contract.

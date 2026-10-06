@@ -319,6 +319,32 @@ written down. **A count nobody can reproduce is a count that moves.**
 it, and a deprecation needs a window, a warning and a version — none of which belongs
 in a chapter whose subject is making the identity work.
 
+**It must not widen past the public path surface.** FR-001's first wording said
+*"every route naming a channel"*, and three internal doors name one —
+`POST /internal/messages`, `/internal/backfill`, `/internal/dispatch/expand`. They
+keep the uuid: `internal.ts:28` types `channel_id` as `z.string().uuid()` and the
+contract's own comment says *"internal uuids are the api's business."* The thirteen
+in `contracts/addressing.md` are the set.
+
+**And it must not try to fix the real-time surface, which is the larger half of the
+same problem.** Every client frame carries `channel: <uuid>` (`session.ts:420,467,538,594`,
+`fanout.ts:170`, `typing.ts:141`), the session response hands a client a list of
+channel uuids at connect (`internal.ts:186`), and a socket `message.send` is forwarded
+to a door that requires a uuid. **So a customer holding a socket still keeps a lookup
+table**, on Journey 3's Stage 5 — *"connected clients see the deletion event
+immediately (FR-RTM-05)"* — which is the same journey whose Stage 1 promises zero of
+them.
+
+**The evidence that it is an oversight is in the contract itself**: two lines above
+`channel_ids`, `internal.ts` writes *"`user` is the EXTERNAL id, as everywhere else on
+this contract: internal uuids are the api's business."* The principle is stated, and
+applied to one of the two fields.
+
+Fixing it means the gateway, `subjectForChannel`, the resume cursors keyed by channel
+and the internal contract — a chapter, not a paragraph, and the same argument R7 makes
+about deprecating the uuid applies with more force. **What this chapter owes is the
+qualifier**: the quickstart, T050 and the handoff to 4.23.
+
 **It must not touch the other four nouns.** Messages, media objects, webhooks and
 environments have no `external_id` column, measured against `information_schema`, so
 a Relay identifier is the only identifier they have.
