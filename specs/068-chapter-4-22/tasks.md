@@ -122,7 +122,7 @@ route beneath that prefix with it.
 - [X] T040 Amend **both** Part 4 tables — `docs/12` and `docs/07`, this chapter's row, marked CLOSED and SHIPPED. **Match on the title**; this chapter's row has `—` in `docs/12`'s first column by design.
 - [X] T041 [P] Sweep `docs/` for feature-local ids **both ways**. **Use `git diff <tag> -- docs/`, not `<tag>..HEAD`** — the two-dot form reads committed state and reported a confident 0 for 4.21 while two leaked ids sat in the working tree.
 - [X] T042 Run `pnpm sync:docs` then `pnpm check:docs` from `relay-tutorial`.
-- [ ] T043 [P] Write `specs/068-chapter-4-22/traceability.md` by **reading**, not grep — including what is in the feature with no requirement behind it, and the clauses deliberately not amended.
+- [X] T043 [P] Write `specs/068-chapter-4-22/traceability.md` by **reading**, not grep — including what is in the feature with no requirement behind it, and the clauses deliberately not amended.
 
 ---
 
