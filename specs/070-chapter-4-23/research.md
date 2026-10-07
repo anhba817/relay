@@ -77,6 +77,19 @@ presenceChangedSchema  frames.ts:247   {user, state, transition} — no channel 
 messageAckSchema       frames.ts:118   {seq} alone. A send by identity is acked with
                        nothing to translate.
 
+FR-RTM-01..10         docs/04-srs.md:469-478 — ten clauses, so FR-RTM-11 is free.
+                      And FR-RTM-04's "truncation indicator" names the indicator
+                      rather than its contents, so re-keying `truncated` leaves it
+                      true.
+
+docs/12:266's ordinal the new row's column one is `—` while the milestone's is 23.
+                      CORRECT: column one keeps the ORIGINAL ordinals so older
+                      references resolve, and a chapter that did not exist then has
+                      none. Checked because it looks like an omission.
+
+quickstart.md §0      scripts/seed-demo-tenant.mjs and services/api/dist/db/
+                      migrate.js both exist.
+
 three of the six gates, RUN at pass 5, agreeing with what T003a inherited
   check:fences   291 fenced files across 65 chapters (46 translated, 2 retired)
   check:srs      246 clause rows, 246 unique identifiers, no duplicates
