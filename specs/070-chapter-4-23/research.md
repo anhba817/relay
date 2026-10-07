@@ -90,6 +90,16 @@ docs/12:266's ordinal the new row's column one is `—` while the milestone's is
 quickstart.md §0      scripts/seed-demo-tenant.mjs and services/api/dist/db/
                       migrate.js both exist.
 
+compose ports         gateway `${RELAY_GATEWAY_PORT:-4001}:4001`, api
+                      `${RELAY_API_PORT:-4000}:4000` (compose.yaml:393, :309), so
+                      the quickstart's ws://localhost:4001 and localhost:4000 hold
+                      at defaults. Checked rather than assumed, which is what pass 8
+                      faulted pass 7 for when it copied a connection between sections.
+
+journey 3 stage 5     docs/03-journey-map.md:397 quotes verbatim as the spec has it:
+                      "connected clients see the deletion event immediately
+                      (FR-RTM-05)".
+
 the quickstart's frame shapes   typingSendSchema is exactly {type, payload:{channel}}
                       (frames.ts:282) and messageSendSchema carries idem_key,
                       channel, text and optional attachments (:90). §3b's frames
