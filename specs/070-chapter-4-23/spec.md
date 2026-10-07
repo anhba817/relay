@@ -221,7 +221,11 @@ for the socket.
   chapter 4.24's milestone then asserts end to end.
 - **SC-008**: `git diff --name-only part4-ch22 --` contains no file outside this
   chapter's subject, tests and documents. One dot, not two (067-3).
-- **SC-009**: The fence chain reports 0 and all six tutorial gates exit 0.
+- **SC-009**: The fence chain reports 0, and **every step of CI's tutorial job
+  passes**: `pnpm lint`, `pnpm build`, `check:docs`, `check:srs`, `check:figures`,
+  `check:fences`. **The job, not the gate set** — `pnpm build` is what catches an
+  unregistered chapter, and `check:errors` is a fifth script that job does not run,
+  so it is hand-run and recorded separately.
 - **SC-010**: The CI error set is compared per error against the pre-chapter
   baseline, in both directions.
 
