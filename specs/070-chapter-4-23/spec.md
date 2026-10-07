@@ -243,6 +243,13 @@ for the socket.
   the path FR-007 is about.
 - **`ALL_CHANNELS` is not a channel.** It is the sentinel the membership-change frame
   uses, and translating it would be a defect.
+- **The published series shows the old answer in nine chapters**, Part 2's 5 and 6
+  and Part 3's 1, 9, 10, 11, 14, 17 and 18 — 9 English lines and 19 Vietnamese
+  printing a frame's `channel` as a uuid. The ones inside titled fences move with
+  the platform; the rest move for nobody and no checker reads them. Measured in
+  Phase 1, decided in Phase 7, and **the decision may legitimately be to record it**:
+  a prose correction after publication moves no platform commit and invalidates no
+  tag.
 - **No FR-RTM clause is being contradicted**, because none of the ten names an
   identifier. FR-008's clause is new rather than an amendment, which is FR-CHN-11's
   shape one chapter on.

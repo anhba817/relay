@@ -77,6 +77,17 @@ presenceChangedSchema  frames.ts:247   {user, state, transition} — no channel 
 messageAckSchema       frames.ts:118   {seq} alone. A send by identity is acked with
                        nothing to translate.
 
+the sealed suite       outsider/integrate.itest.ts:408 opens a REAL socket and
+                       matches frames on `type` and `payload.text` — no assertion
+                       reads a channel, and its channel references are all REST.
+                       Unaffected, which is worth knowing: it is the suite that
+                       broke unexpectedly in 054.
+
+docs/05-sad.md         §5.1's `frame message.send {idem_key, channel, text}` (:255)
+                       and :1889's "carries a channel and nothing else" name the
+                       FIELD without saying which identifier fills it. Both stay
+                       true; neither needs amending.
+
 connection.revisions   auth.ts:104 builds it, session.ts:1322 reads it at the ack,
                        and NOTHING compares it internally — two readers, both at an
                        edge. So re-keying it where the connection holds it is safe,
