@@ -159,7 +159,7 @@ docs/
 ├── 07-tutorial-plan.md           row 23 SHIPPED
 └── 12-part-4-structure.md        row 23 CLOSED · §7.6
 relay-tutorial/
-└── app/(en)/part-4/chapter-23/the-priya-test/{page.mdx,figures.ts}
+└── app/(en)/part-4/chapter-24/milestone-the-priya-test/{page.mdx,figures.ts}
 ```
 
 ## Phases

@@ -77,6 +77,13 @@ presenceChangedSchema  frames.ts:247   {user, state, transition} — no channel 
 messageAckSchema       frames.ts:118   {seq} alone. A send by identity is acked with
                        nothing to translate.
 
+three of the six gates, RUN at pass 5, agreeing with what T003a inherited
+  check:fences   291 fenced files across 65 chapters (46 translated, 2 retired)
+  check:srs      246 clause rows, 246 unique identifiers, no duplicates
+  check:docs     all mirrored docs match · 30 revisions ascend, 1.0 to 1.29
+  so the predicted deltas 65->66, 246->247 and 30->31 start from measured ground
+  rather than from a figure copied out of 068's close
+
 the sealed suite       outsider/integrate.itest.ts:408 opens a REAL socket and
                        matches frames on `type` and `payload.text` — no assertion
                        reads a channel, and its channel references are all REST.
@@ -275,8 +282,24 @@ the connection's channel set is built), `typing.ts` (one site, one page) and
 count rises when the work is traced rather than listed. 068 charged 9 files against a
 bill of 8 and every surprise came from running something.
 
-**The 74 Vietnamese pages are a mirror cost, not a replay cost** (050-3) — the vi
-chain is compared against the English chapter and never against `relay-platform`.
+**AND THE 74 VIETNAMESE PAGES ARE A COST NOBODY HAS PAID SINCE CHAPTER 4.8.** Pass 5
+read both repositories' histories: **fourteen chapters — 4.9 through 4.22 — shipped
+with zero `app/(vi)` edits**, and the last Vietnamese commit is 055's fence repair.
+
+```
+the vi tree is app/(vi)/vi/part-4, not app/(vi)/part-4
+Part 4 in Vietnamese     chapters 01, 02, 03        against 23 in English
+the whole series in vi   46 pages
+check:fences             291 files across 65 chapters (46 translated, 2 retired)
+                         — green through all fourteen
+```
+
+So the gate does not ask for a mirror and the series stopped making one. **The 74 is
+a count of vi pages that mention these files, not of work this chapter will do** —
+and it is a mirror cost rather than a replay cost (050-3), because the vi chain is
+compared against the English chapter and never against `relay-platform`. Whether
+this chapter translates anything is a decision (T059), and the honest default is
+whatever the last fourteen did, said out loud.
 
 ## R7 — What this chapter must not do
 
