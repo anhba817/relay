@@ -1,6 +1,6 @@
 # Quickstart — chapter 4.23, "The channel a socket names"
 
-**§0 to §2 are MEASURED on 2026-10-06. §3 and §4 are PREDICTIONS** until phase 9
+**§0 to §2 are MEASURED on 2026-10-06. §3, §3b and §4 are PREDICTIONS** until phase 9
 runs them. **§2's COMMAND was rewritten at analysis pass 1 and has not been run in
 that form** — the original printed `f.payload.channels ?? f.payload.channel_ids`,
 neither of which the ack has. What the new one prints is derived from
@@ -85,6 +85,40 @@ connection.ack       revisions keys = ["order-NNNNN", …]
 
 **Expected after the chapter**: seven fields and three structures, ten of ten, and a
 send naming `order-NNNNN` answering as a send naming the uuid does today.
+
+## 3b · Saying the identifier, which §1 to §3 never do (PREDICTION)
+
+**THE FIRST FOUR SECTIONS READ AND NEVER WRITE**, so the half of the chapter that
+accepts an identifier had no section at all until analysis pass 7. FR-002, FR-003
+and SC-002 live here.
+
+```bash
+node -e '
+const { WebSocket } = require("ws");
+const s = new WebSocket(process.env.WS, { headers: { authorization: `Bearer ${process.env.T}` } });
+const say = (f) => s.send(JSON.stringify(f));
+s.on("open", () => {
+  // by the name the customer gave it
+  say({ type: "message.send", payload: { idem_key: `k${Date.now()}`, channel: process.env.ORD, text: "by identifier" } });
+  // by the uuid a client minted before this chapter
+  say({ type: "message.send", payload: { idem_key: `k${Date.now()}b`, channel: process.env.UUID, text: "by key" } });
+  // and the path with no refusal behind it
+  say({ type: "typing.send", payload: { channel: process.env.ORD } });
+});
+s.on("message", (b) => console.log("  ", String(b).slice(0, 160)));'
+```
+
+```
+message.ack                  for the send by identifier
+message.ack                  for the send by uuid       (FR-003: both keep working)
+typing  channel = order-NNNNN  echoed to the other member of the channel
+```
+
+**AND THE TYPING LINE IS THE ONE TO WATCH.** A send that is not understood is
+refused by the api and the client is told. A typing frame for a channel the
+connection does not hold is **dropped with no frame, no close code and no log line**
+— so if the identifier is not translated, this section prints two acks and nothing
+else, and that silence is the whole of FR-003's forbidden outcome.
 
 ## 4 · A channel joined while connected (PREDICTION, and the one Phase 2 decides)
 

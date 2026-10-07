@@ -52,7 +52,11 @@ gateway's client edge* and not how the map is built.
 *Scope is clearly bounded* rests on FR-004, the assumption that 4.22's division
 holds here. **If the premise check finds that the subjects or the resume cursors
 have to move**, the bound moves with them and this becomes a larger chapter than
-~50 fence pages. The plan should check that before it believes the estimate — 4.15's
+~50 fence pages. **MEASURED TWICE SINCE: 83 English pages across 9 files at
+`/speckit-plan`, then 11 files at analysis pass 1, which found the gateway calling
+a second api→gateway contract this bill had never counted.** The subjects and the
+cursor storage did not have to move; the estimate was wrong for a different
+reason, which is that it was a list rather than a trace. The plan should check that before it believes the estimate — 4.15's
 rule, and 068 charged 9 files against a bill of 8.
 
 **WHAT THIS SPEC DELIBERATELY DOES NOT DECIDE.** Whether the Relay identifier is

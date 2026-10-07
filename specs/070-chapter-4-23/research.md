@@ -285,7 +285,11 @@ carrying channel keys, live, in two files this bill never counted. Their pages a
 left as `?` on purpose: **a bill with a measured hole in it is more honest than one
 rounded up**, and T005 closes it before Phase 2.
 
-**83 ENGLISH PAGES ACROSS 9 FILES, AGAINST THE SPEC'S "~50 ACROSS 7".** I wrote that
+**83 ENGLISH PAGES ACROSS 9 FILES, AGAINST THE SPEC'S "~50 ACROSS 7" — AND PASS 1
+MADE IT 11 FILES, 83+.** The table above carries the later number and this heading
+carries the one the section was written with, deliberately: the trail is 50 across
+7, then 83 across 9, then 83+ across 11, and every step came from tracing rather
+than listing. I wrote that
 estimate, from the seven files the gap itself touches, and it missed `auth.ts` (where
 the connection's channel set is built), `typing.ts` (one site, one page) and
 `repository.ts` — which is 28 pages on its own and is in the bill because

@@ -68,6 +68,7 @@ at the outermost send  session.ts:119 `send(socket, frame)` becomes a wrapper
 ```
 
 **The second keeps every internal structure keyed** — `connection.buffer`, `marks`, `channelIds`, `lastPublished` — and that matters because two internal comparisons index a buffered frame BY `frame.channel`: `flushable`'s `marks[frame.channel]` (`resume.ts:111`) and the revocation filter's `m.channel !== change.channel` (`session.ts:662`). **Translate where the frame is built and both go silently false**: every mark is lost, so a resuming client is re-sent its whole buffer, and a revoked channel's backlog is flushed to somebody who has just lost access (FR-029, named in that comment). **It may also shrink the chapter** — 21 edits become one wrapper, and the fence bill with them, which would be the first time in Part 4 that a bill went DOWN. **And it collides with T010's answer**: a per-connection translation at `send` gives two answers for the one membership frame that `session.ts:602` builds once and sends to two audiences, because on an add the subject's map has no entry yet. Decide both together.
+- [ ] T012b **Write the probe T012a will be judged against, before T012a decides.** Assert the two internal comparisons a buffered frame takes part in, in `relay-platform/services/gateway/src/resume.itest.ts` and `membership.itest.ts`: **a resume with a non-empty buffer delivers each frame once** (`flushable`'s `marks[frame.channel]`, `resume.ts:111`), and **a revocation landing mid-resume drops that channel's buffered frames** (`session.ts:662`, FR-029). **Both are green today and both go silently false if a buffered `message.channel` becomes an identity while the marks and the change stay keyed** — which is the test T012a is chosen against, because a paragraph cannot tell you which design keeps them. Written here rather than in Phase 5, where the first draft put them, although the dependency graph had said all along that they come first: a task in a phase that T012a blocks cannot run before T012a.
 - [ ] T013 **Decide whether this chapter needs an ADR**, and record the reasoning either way in `baseline.txt`. **Predicted no**, with an amendment to ADR-38's *"what it does not cover"* paragraph instead — that is the paragraph that named this gap. 4.21's plan predicted no and was wrong; 4.22's predicted yes and was right. **A prediction is worth nothing without the check.**
 - [ ] T014 **Confirm the session response widening is a change both sides can make at once.** `internal.ts` says *"Payloads are strict: unknown fields are rejected"* (constitution VI, fifth bullet), so a gateway reading a field an older api does not send, or an api sending one an older gateway rejects, is a deployment-order defect. Read how api and gateway versions move together in `compose.yaml` and in CI, and record whether this is a two-step change or a one-step one. **And `connectionAckSchema` is strict on both levels**, so T021a's and T021b's changes are two-sided against the CLIENT as well — every field the ack gains or re-keys is a change a client's own parser can refuse. **Name the failure mode, not just the step count**: `internalSessionResponseSchema` is strict and `api-client.ts:63` parses it, so an old gateway meeting a new api throws inside `parse`, `auth.ts:107` catches it and returns `{ outcome: "unavailable" }` — **every connection refused, and the api reported as down**. `frames.ts:152` already documents this boundary for three other payloads and says what each one does; this is the fourth and it fails harder than any of them.
 
@@ -132,7 +133,6 @@ silently misrouted.
 - [ ] T033 [US1] Accept the identifier on `messageSendSchema`'s channel field, translating to the key before the gateway knocks at the api's internal door. **The line is `session.ts:1620`**, `channel_id: channel` — the client's string goes straight into `internalSendRequestSchema`, which is `z.string().uuid()`, so an untranslated identity is refused by a zod parse one service away rather than by anything this chapter wrote. Translate with T023's inverse map, before the call.
 - [ ] T034 [US1] Accept the identifier on `typingSendSchema`'s channel field, translating at `session.ts:1571` before `signalTyping`. **THIS IS THE PATH WHERE FR-003 IS LOST IF IT IS LOST ANYWHERE.** `signalTyping` opens `if (!connection.channelIds.has(channelId)) return;` — commented *"DROPPED WITH NO FRAME, NO CLOSE CODE AND NO LOG LINE (FR-013)"* — and past it the string becomes a NATS subject through `subjectForTyping` (`typing.ts:137`). So an untranslated identity is **indistinguishable from a client typing into a channel it has left**: no error, no frame, no log line, and no api round trip to refuse it the way a send has. **Assert the drop does not happen**, which means asserting something arrives rather than asserting nothing was refused.
 - [ ] T035 [US1] Assert a send by identifier lands and a send by uuid still lands, **each separately** (SC-002, FR-003). Two assertions, because the chapter's promise and its compatibility claim fail for different reasons.
-- [ ] T035a [US1] Assert the two internal comparisons a buffered frame takes part in still hold, in `relay-platform/services/gateway/src/resume.itest.ts` and `membership.itest.ts`: **a resume with a non-empty buffer delivers each frame once** (`flushable`'s `marks[frame.channel]`, `resume.ts:111`), and **a revocation landing mid-resume drops that channel's buffered frames** (`session.ts:662`, FR-029). Both are green today and both go silently false if a buffered `message.channel` becomes an identity while the marks and the change stay keyed. **Write them before T012a's design lands**, so the design is chosen against a test rather than a paragraph.
 - [ ] T036 [US1] Assert that an identifier naming a channel the client may not hear is refused **exactly as that case is refused today** (FR-005), by comparing the two refusals field by field with `request_id` stripped. **068-2 is why**: a resolver that refuses makes a user able to tell which channels exist, and it passed 92 assertions before the gauntlet caught it.
 
 ---
@@ -149,8 +149,8 @@ and the api-facing contract; find keys, unchanged.
 - [ ] T039 Pin the new files in `relay-platform/vitest.coverage.config.mts` and **run both halves of the pin probe through `pnpm coverage`**: a pin on a file that does not exist (silent) and an impossible pin on a real file (loud). A filtered `vitest run` evaluates no per-file threshold at all (066), and **a pin above the real number is loud while a pin below it is as silent as a pin on nothing** (067).
 - [ ] T040 Read the branch map, not the percentage, for any file that comes in under 100% — 068 spent three wrong readings on `channel-id.pipe.ts` before finding the uncovered arm was on `@Injectable()`, compiler-emitted and reachable by no test.
 - [ ] T041 Count what a client receives over a full session and state the number (SC-004): **zero channel Relay identifiers**, counted rather than asserted in aggregate, **in any position — field, key or list member**. **This is the only criterion in the spec that would have caught the ack's three structures**, and at Phase 6 it catches them too late to be cheap. Run its sweep once at T006a as well, against the current binary, where the answer is still a measurement rather than a verdict.
-- [ ] T042a Add the socket attacks T009's answer calls for, in `relay-platform/services/api/src/isolation/gauntlet.itest.ts` or beside it: **a foreign channel's identity and a foreign channel's key, presented on a send, on a typing frame and in a resume cursor.** Each must be refused exactly as an unknown channel is refused, by the same code and the same message — 068-2 is the precedent, where a refusal one layer early let a banned user tell which channels existed. **If T009 concluded the suite cannot reach a socket, this task is the constitution amendment instead**, and it names which clause and why.
 - [ ] T042 Record the gauntlet's answer from T009 — the attacks added, or the gap written down.
+- [ ] T042a Add the socket attacks T009's answer calls for, in `relay-platform/services/api/src/isolation/gauntlet.itest.ts` or beside it: **a foreign channel's identity and a foreign channel's key, presented on a send, on a typing frame and in a resume cursor.** Each must be refused exactly as an unknown channel is refused, by the same code and the same message — 068-2 is the precedent, where a refusal one layer early let a banned user tell which channels existed. **If T009 concluded the suite cannot reach a socket, this task is the constitution amendment instead**, and it names which clause and why.
 
 ---
 
@@ -159,7 +159,7 @@ and the api-facing contract; find keys, unchanged.
 - [ ] T043 Amend ADR-38's *"what it does not cover"* paragraph in `docs/06-adr-deep-dives.md`. That paragraph named this gap; it is now closed and must stop saying it is open.
 - [ ] T044 [P] Amend ADR-38's summary in `docs/05-sad.md`. **An ADR lives in two documents** (050) and 068 shipped four feature-local ids into both homes at once.
 - [ ] T045 [P] **Correct** this chapter's row in `docs/12-part-4-structure.md` — **the file is `-structure`, not `-plan`, which is what this task said until pass 6 resolved it**, and the only dead path among thirteen `docs/` references in this feature. **The row already exists** (line 266, written when the gap was found) and it carries the estimate R6 superseded: *"Seven client-facing frame schemas, 21 sites in the gateway, ~50 English fence pages"* against a measured 83+ across 11 files. The movement column is the stable address; **column one keeps the original ordinals on purpose**, and this row's `—` is correct rather than missing, because a chapter that did not exist then has no original ordinal.
-- [ ] T045a [P] **Move the chapter counts, which no task owned and which 068 left behind.** Part 4 is 24 and three published statements still say 23: `docs/12-part-4-structure.md:199` *"seven movements, 23 chapters, three milestones"*, and `docs/07-tutorial-plan.md:84` and `:538`. `docs/12:552`'s *"It was 23, then 24, then 23 again"* is stale with them and is the open question that narrates the count. **A row was added and the number that sums the rows was not** — which is the shape to check whenever a part gains a chapter, and this part has gained two in three features.
+- [ ] T045a **Move the chapter counts, which no task owned and which 068 left behind.** Part 4 is 24 and three published statements still say 23: `docs/12-part-4-structure.md:199` *"seven movements, 23 chapters, three milestones"*, and `docs/07-tutorial-plan.md:84` and `:538`. `docs/12:552`'s *"It was 23, then 24, then 23 again"* is stale with them and is the open question that narrates the count. **A row was added and the number that sums the rows was not** — which is the shape to check whenever a part gains a chapter, and this part has gained two in three features.
 - [ ] T046 [P] Amend `docs/07-tutorial-plan.md` for the chapter — the Part 4 section at :538 and the summary line at :84, both of which T045a also touches for their counts.
 - [ ] T047 [P] Amend `docs/03-journey-map.md` Stage 5, which is the half of Journey 3's promise this chapter keeps.
 - [ ] T048 Add SRS revision 1.30 in `docs/04-srs.md`. `check:docs` counts ascending revisions (T003a).
@@ -210,7 +210,7 @@ Phase 2  the decisions       BLOCKS Phase 4 and Phase 5 entirely
   T010 -> T029    T011 -> T032    T012 -> T023, T039, T053    T013 -> T043
   T012a -> T021a, T021b, T025..T028 and the fence bill; decided WITH T010
   T005a -> T049a  (measure in Phase 1, decide in Phase 7)
-  T035a is written BEFORE T012a lands — the design is chosen against a test
+  T012b is written BEFORE T012a decides — and it sits in Phase 2 for that reason
 Phase 3  the clause          before Phase 4, deliberately (constitution VI.1)
 Phase 4  the map             T019 -> T020 -> T021 -> T022 -> T023 -> T025..T028
                              T021a · T021b after T023, with the other sites
@@ -230,6 +230,7 @@ bound has gone and the plan says so in writing.
 ```
 T026 · T027              different gateway files, one site each
 T044 · T045 · T046 · T047  four documents, no shared anchor
+T045a is NOT parallel: it touches docs/12 and docs/07, which T045 and T046 hold
 ```
 
 Phase 4's spine is serial on purpose: the identity has to exist in the repository
@@ -245,8 +246,9 @@ before the controller can send it, and on the connection before any site can rea
 
 ## MVP
 
-**User Story 1's outbound half — Phase 4.** Seven frame kinds naming the channel the
-customer named is the chapter. Phase 5 is what stops it breaking every client that
+**User Story 1's outbound half — Phase 4.** Ten things naming the channel the
+customer named — seven `channel` fields and the ack's three structures — is the
+chapter. Phase 5 is what stops it breaking every client that
 is already connected, and Phase 3 is what stops the next frame being guessed.
 
 ---
@@ -259,7 +261,7 @@ Grepped for each identifier, then read:
 FR-001 every outbound field    T018·T021a·T021b·T025–T028·T030    SC-001  T018·T030
 FR-002 every inbound field     T023·T032–T034         SC-002  T035·T034
 FR-003 the uuid is not lost    T011·T032·T035         SC-003  T020·T021·T021a·T021b
-FR-004 confined to the edge    T008·T012a·T035a·T037  SC-004  T041
+FR-004 confined to the edge    T008·T012a·T012b·T037  SC-004  T041
 FR-005 refused as today        T036                   SC-005  T038
 FR-006 scoped, demonstrated    T022·T038              SC-006  T037
 FR-007 mid-session membership  T010·T029              SC-007  T071
