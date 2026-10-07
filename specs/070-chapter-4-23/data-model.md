@@ -30,11 +30,14 @@ behind the edge, unchanged either way
 input:  the session response at connect, already scoped to this principal
         [{ key, identity }, …] for the channels this user may hear
 
-held:   on the connection, beside the `channelIds: Set<string>` that
-        auth.ts:103 already builds from the same response
+held:   on the registry's Connection, beside the `channelIds: Set<string>` at
+        registry.ts:25 and the channel-keyed `revisions` at registry.ts:21
+        — NOT auth.ts:103, which is `string[]` one hop earlier (auth.ts:42)
 
 read:   at the 21 sites that write `channel:` onto a client frame
         18 session.ts · 1 fanout.ts · 1 resume.ts · 1 typing.ts
+        at the 22nd, one call away in the revocation backstop (session.ts:741)
+        and at the three ack structures that name channels without a field
 
 write:  at connect, and on whatever Phase 2 decides for a mid-session join
 ```
@@ -69,4 +72,17 @@ a send           takes the identity, and still takes a key (R4)
 a resume cursor  keyed by identity going out; both forms accepted coming in,
                  because every connected client across the deployment holds one
                  keyed by uuid and `cursorSchema` is z.record(z.string(), …)
+
+and the ack's other two structures, which a count of `channel` fields missed
+  revisions      z.record(channel, number) — on EVERY ack, zeros included
+  truncated      string[] of channel ids, built at session.ts:1354 as
+                 [...connection.channelIds]
 ```
+
+**THE INBOUND CURSOR IS FILTERED, NOT PARSED.** `resume.ts:80` is
+`Object.entries(cursors).filter(([channelId]) => channelIds.has(channelId))`, so a
+key the set does not hold is **dropped silently** — no error, no refusal, no log. An
+identity-keyed cursor meeting a key-holding set resumes nothing and says nothing,
+which is the one outcome FR-003 forbids, reached by a filter rather than by a parse
+failure. Whatever Phase 2 decides about telling the two forms apart has to be
+decided at that line.

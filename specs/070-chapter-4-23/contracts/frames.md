@@ -20,6 +20,21 @@ change, the value does.** A schema that said `.uuid()` would have made this chap
 breaking contract change; it does not, which is the one thing about the current
 design that helps.
 
+## The three that are not fields
+
+`connectionAckSchema` names channels three more times and not once with a `channel`
+field. Pass 1 found them; the first version of this contract had none of them.
+
+```
+revisions    z.record(channel, number)   frames.ts:83 · every ack, zeros included
+cursor       z.record(channel, seq)      frames.ts:66 · the resume answer
+truncated    string[] of channel ids     frames.ts:67 · FR-RTM-04's refetch list
+```
+
+**And the payload is a `z.strictObject` inside a `z.strictObject`**, so each of the
+three is a contract change both sides must make together rather than a value a
+client can absorb.
+
 ## Outbound
 
 | | before | after |
@@ -28,6 +43,8 @@ design that helps.
 | `membershipChangedSchema` on a ban | `"*"` | `"*"` — unchanged, not a channel |
 | the session response's channel list | keys | **identities** |
 | a resume cursor the server mints | keyed by key | **keyed by identity** |
+| `connection.ack.payload.revisions` | keyed by key | **keyed by identity** |
+| `connection.ack.payload.truncated` | a list of keys | **a list of identities** |
 
 ## Inbound
 
@@ -35,7 +52,7 @@ design that helps.
 |---|---|
 | a send naming a channel by identity | lands in that channel |
 | a send naming it by key | **keeps working** — 4.22's shape, and R4's reason |
-| a resume cursor keyed by uuid | **accepted**, or constitution II is broken silently |
+| a resume cursor keyed by uuid | **accepted**, or constitution II is broken silently — and the thing that would break it is `resume.ts:80`, which FILTERS unknown keys out without a word |
 | a resume cursor keyed by identity | accepted |
 | an identifier the user may not hear | refused exactly as today, revealing nothing new |
 
@@ -54,5 +71,11 @@ two are told apart is Phase 2's decision and this contract's one open row.
 - **No change to `internalSendRequestSchema.channel_id`.** It stays
   `z.string().uuid()`; that door is the gateway talking to the api, and the gateway
   translates before it knocks.
+- **No change to `internalBackfillResponseSchema.channels`**, keyed by key, or to
+  the cursors the gateway sends it. Internal, both directions.
+- **`internalMembershipsResponseSchema.channel_ids` is the one open question here**
+  — a second api→gateway contract carrying keys, called on a timer by the
+  revocation backstop (`api-client.ts:202`). Whether it widens to pairs is T010's
+  decision, because the backstop is also the cheapest place to refresh the map.
 - **No new frame kind, and no new field on an existing one.** Strict payloads reject
   unknown fields, so adding one is a two-sided change — and nothing here needs it.

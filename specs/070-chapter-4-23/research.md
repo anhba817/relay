@@ -20,6 +20,8 @@ what those sites write
   message.channel     1      revision.channel    1
 
 the gateway's references to a channel's external id     0
+  the naive grep returns 5 and all five are a USER's external id —
+  connection-log/event.ts (2) and isolation-fixtures.ts (3)
 ```
 
 **THE GATEWAY CANNOT TRANSLATE TODAY BECAUSE IT HAS NOTHING TO TRANSLATE FROM.** Not
@@ -27,14 +29,49 @@ one reference, anywhere in the service. So this is not a rename of 21 expression
 it is giving the gateway a mapping it has never held, and the 21 sites are what
 happens afterwards.
 
+## R1a — AND THE COUNT ABOVE IS OF FIELDS, OVER A SURFACE THAT ALSO USES KEYS
+
+Analysis pass 1 read `connectionAckSchema` and found **three more client-facing
+structures that name channels, none of them a `channel` field and none of them
+visible to either count in R1**:
+
+```
+connection.ack.payload.revisions   z.record(channel, number)    frames.ts:83
+                                   session.ts:1322, from registry.ts:21
+connection.ack.payload.cursor      z.record(channel, seq)       frames.ts:66
+                                   session.ts:1400
+connection.ack.payload.truncated   string[] of channel ids      frames.ts:67
+                                   session.ts:1354  [...connection.channelIds]
+```
+
+**A MAP KEYED BY A CHANNEL AND AN ARRAY OF CHANNEL IDS ARE BOTH INVISIBLE TO A GREP
+FOR `channel:`.** `revisions` is sent on every ack, `truncated` on every resume, and
+the first draft of this feature named neither — the word `truncated` appeared in no
+artifact at all. The measurement found what its own shape could find.
+
+**The premise is therefore not *seven fields*. It is: every structure a client
+receives that names a channel in any position** — as a field, as a key, or as a
+member of a list. Counted that way the surface is **7 fields plus 3 structures**,
+and `truncated` is the cheapest of the three to translate, being one spread.
+
+**AND `connectionAckSchema` IS A `z.strictObject` WHOSE PAYLOAD IS STRICT TOO.** So
+these are contract changes on the client side rather than value changes, which is
+constitution VI's fifth bullet engaged harder than the plan assumed.
+
 ## R2 — Where the translation goes, and the cheap-looking option is the expensive one
 
 Three designs. The spec assumed the first; this section tested the second and found
 it worse, for a reason that did not exist a day ago.
 
-**A — A MAP AT THE GATEWAY'S CLIENT EDGE.** The connection already holds
-`channelIds: Set<string>` (`auth.ts:103`, filled from the session response). It gains
-a parallel `Map<key, identity>`, and the 21 sites read through it on the way out. The
+**A — A MAP AT THE GATEWAY'S CLIENT EDGE.** The registry's `Connection` already
+holds `channelIds: Set<string>` (`registry.ts:25`) **and a channel-keyed
+`revisions: Record<string, number>` beside it** (`registry.ts:21`), both filled from
+the session response. It gains a parallel `Map<key, identity>`, and the sites read
+through it on the way out. **Not `auth.ts:103`, which the first draft of this
+section named**: that is `channelIds: string[]` on the auth result (`auth.ts:42`),
+one hop earlier and not what `session.ts` or `fanout.ts` read. The registry's
+`Connection` is the right home for the plainer reason that it already holds a map
+keyed by exactly the thing this chapter is re-keying. The
 registry keeps routing on keys (`registry.subscribersOf(channelId)`), the fan-out
 subjects keep their shape, the api-facing door keeps its uuid.
 
@@ -93,8 +130,7 @@ preference:
 the membership frame carries the identity      one payload, one publish site, and
                                                the api must look it up — B's problem
                                                confined to one low-rate path
-the gateway refetches its session on change    one round trip per membership change,
-                                               and the data is already shaped for it
+the gateway refetches its session on change    THE REFETCH ALREADY EXISTS — see below
 the map falls back to the key                  no round trip, and the client sees a
                                                uuid for exactly the channels it most
                                                recently joined — the worst case the
@@ -102,6 +138,25 @@ the map falls back to the key                  no round trip, and the client see
 ```
 
 The third is listed to be refused in writing.
+
+**AND THE SECOND OPTION IS MISPRICED, WHICH PASS 1 FOUND BY READING THE FILE.**
+`session.ts:713` is `reread`, the membership-revocation backstop: it already calls
+`api.memberships(connection.identity)` **on a timer, for every connection**, and
+applies the difference through `deliverMembership`. So the round trip this option
+was costed at is **a round trip the gateway is already making** — it simply goes to
+`GET /internal/memberships`, which returns `channel_ids` and no identities
+(`api-client.ts:202`, `internal.ts:171`).
+
+```
+reread()                 session.ts:729   const actual = new Set(await api.memberships(…))
+                         session.ts:741   deliverMembership({ channel: channelId, … })
+```
+
+**That is a 22nd site that writes a channel onto a client frame**, reached only on
+the timer, and R1's grep did not see it because the write is one function call away.
+Widening the memberships response to pairs would fill the map on the same schedule
+the backstop already runs on, for no new request — which changes which of the three
+options is cheapest and is why this re-pricing lands before the decision.
 
 ## R4 — What happens to a client holding a uuid, which the spec left open
 
@@ -148,9 +203,18 @@ services/gateway/src/typing.ts           1    1     0   CREATE
 services/api/src/internal/session.controller.ts
                                          6    6     0   CREATE
 services/api/src/db/repository.ts       28   23     8
+services/gateway/src/api-client.ts       ?    ?     ?   T005 — found at pass 1
+services/api/src/internal/memberships.controller.ts
+                                         ?    ?     ?   T005 — found at pass 1
                                         --   --    --
-                                        83   74    18   3 to create
+                                        83+  74+   18+  3 to create, AT LEAST
 ```
+
+**AND THE BILL IS ALREADY SHORT BY TWO FILES.** Pass 1 found the gateway calling
+`GET /internal/memberships` at `api-client.ts:202` — a second api→gateway contract
+carrying channel keys, live, in two files this bill never counted. Their pages are
+left as `?` on purpose: **a bill with a measured hole in it is more honest than one
+rounded up**, and T005 closes it before Phase 2.
 
 **83 ENGLISH PAGES ACROSS 9 FILES, AGAINST THE SPEC'S "~50 ACROSS 7".** I wrote that
 estimate, from the seven files the gap itself touches, and it missed `auth.ts` (where

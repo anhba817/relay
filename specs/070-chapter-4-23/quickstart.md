@@ -1,7 +1,11 @@
 # Quickstart — chapter 4.23, "The channel a socket names"
 
 **§0 to §2 are MEASURED on 2026-10-06. §3 and §4 are PREDICTIONS** until phase 9
-runs them. 4.22's two predictions came true first time; 4.21's were both wrong,
+runs them. **§2's COMMAND was rewritten at analysis pass 1 and has not been run in
+that form** — the original printed `f.payload.channels ?? f.payload.channel_ids`,
+neither of which the ack has. What the new one prints is derived from
+`connectionAckSchema` and from the gateway holding no channel external id at all, so
+it is a prediction wearing a measured section's label until T006a runs it. 4.22's two predictions came true first time; 4.21's were both wrong,
 4.20's five times. Distrust any section whose behaviour Phase 2 still decides —
 here that is §4, which depends on how a mid-session join gets its identity.
 
@@ -51,12 +55,17 @@ const s = new WebSocket(process.env.WS, { headers: { authorization: `Bearer ${pr
 s.on("message", (b) => { const f = JSON.parse(b);
   const c = f.payload?.channel ?? f.channel;
   if (c) console.log("  ", f.type, "channel =", c);
-  if (f.type === "connection.ack") console.log("   ack channels =", JSON.stringify(f.payload?.channels ?? f.payload?.channel_ids));
+  if (f.type === "connection.ack") console.log("   ack revisions =", JSON.stringify(Object.keys(f.payload.revisions)),
+    "cursor =", JSON.stringify(Object.keys(f.payload.cursor)), "truncated =", JSON.stringify(f.payload.truncated));
 });'
 ```
 
-**Measured**: every `channel` is a uuid, and the ack's channel list is uuids. The
-customer named the channel `order-NNNNN` and the socket has never heard of it.
+**Measured**: every `channel` is a uuid — **and the ack names channels three more
+times without using the word**: `revisions` and `cursor` are keyed by uuid and
+`truncated` is a list of them. The payload has no `channels` or `channel_ids` field
+at all, which is why the first version of this section printed `undefined` and why
+the premise it was written from counted seven fields and missed three structures.
+The customer named the channel `order-NNNNN` and the socket has never heard of it.
 
 ## 3 · The identity on every frame (PREDICTION)
 
@@ -69,11 +78,13 @@ message.updated      channel = order-NNNNN
 media.updated        channel = order-NNNNN
 membership.changed   channel = order-NNNNN
 typing               channel = order-NNNNN
-connection.ack       channels = ["order-NNNNN", …]
+connection.ack       revisions keys = ["order-NNNNN", …]
+                     cursor keys    = ["order-NNNNN", …]
+                     truncated      = ["order-NNNNN", …] or []
 ```
 
-**Expected after the chapter**: seven of seven, and a send naming `order-NNNNN`
-answering as a send naming the uuid does today.
+**Expected after the chapter**: seven fields and three structures, ten of ten, and a
+send naming `order-NNNNN` answering as a send naming the uuid does today.
 
 ## 4 · A channel joined while connected (PREDICTION, and the one Phase 2 decides)
 

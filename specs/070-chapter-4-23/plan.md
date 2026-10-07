@@ -7,7 +7,9 @@
 ## Summary
 
 Seven client-facing frame schemas name a channel and every one of them carries the
-uuid Relay minted. ADR-38, written one chapter ago, says a noun with a
+uuid Relay minted — **and the `connection.ack` payload carries three more structures
+that name channels by key or in a list** (`revisions`, `cursor`, `truncated`), which
+analysis pass 1 found and the field-shaped premise could not. ADR-38, written one chapter ago, says a noun with a
 customer-supplied identifier is addressed by it — and the gateway has never been read
 against that rule, because the rule is newer than the gateway.
 
@@ -32,7 +34,7 @@ one place the other design needed it.
 | **New service** | none |
 | **New table or column** | **none** — no migration |
 | **The mechanism** | a per-connection `key → identity` map, filled at connect (R2, R3) |
-| **Blast radius** | **9 files · 83 English fence pages · 18 appendix blocks, 3 to create** (R6) — the spec estimated ~50 across 7 and was 40% low |
+| **Blast radius** | **11 files · 83+ English fence pages · 18+ appendix blocks, 3 to create** (R6) — the spec estimated ~50 across 7 and was 40% low; pass 1 then added two files R6 had not counted |
 | **Regression surface** | every connected client; the resume cursor is the sharp edge (R4) |
 | **Unknowns** | **how a channel joined mid-session gets its identity** — three options priced, Phase 2 |
 
@@ -114,11 +116,16 @@ relay-platform/
 ├── packages/protocol/src/frames.ts       7 schemas — the comment, not the type
 ├── services/api/src/internal/session.controller.ts   pairs, not strings
 ├── services/api/src/db/repository.ts     channelsForUser returns the identity too
-├── services/gateway/src/auth.ts          the connection gains the map
-├── services/gateway/src/session.ts       18 of the 21 sites
+├── services/gateway/src/registry.ts      the Connection gains the map, beside the
+│                                         channel-keyed `revisions` it already holds
+├── services/gateway/src/auth.ts          carries the pairs one hop earlier
+├── services/gateway/src/session.ts       18 of the 21 sites, the ack's three
+│                                         structures, and the revocation backstop
 ├── services/gateway/src/fanout.ts        1
-├── services/gateway/src/resume.ts        1, and the cursor's inbound half
-└── services/gateway/src/typing.ts        1
+├── services/gateway/src/resume.ts        1, and the cursor's inbound FILTER
+├── services/gateway/src/typing.ts        1
+├── services/gateway/src/api-client.ts    the second api→gateway contract (pass 1)
+└── services/api/src/internal/memberships.controller.ts   the other end of it
 
    THE SUBJECTS DO NOT APPEAR HERE AND THAT IS THE DESIGN. `subjectForChannel` and
    its four siblings keep deriving from the key; a subject is not a thing a client
@@ -145,9 +152,11 @@ identifier names a channel in a frame. **Moved ahead of the code deliberately**:
 4.22 wrote its clause in Phase 5 with the code already in Phase 3, and `clauses.md`
 had to record the bullet as met late. Not twice.
 
-**4 — The map (P1).** The session response, `channelsForUser`, the connection, and
-the 21 sites. Red first: a frame's `channel` field asserted to be the identifier,
-which fails today on all seven.
+**4 — The map (P1).** The session response, `channelsForUser`, the registry's
+`Connection`, the 21 sites — **and the `connection.ack` payload's three structures
+that name channels without a `channel` field** (`revisions`, `cursor`,
+`truncated`), which pass 1 found. Red first, and the red test is ten assertions
+rather than seven.
 
 **5 — The inbound half (P1).** Sends by identifier; the cursor accepting both forms
 per Phase 2's decision; `ALL_CHANNELS` special-cased before the map is consulted.

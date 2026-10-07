@@ -31,9 +31,18 @@ check:srs      rows     246 -> 247   FR-RTM-11, and unique            T015
 
 **The two halves of the fence line count different things.** `en.perChapter.size` moves for any page the walker visits, even one titling zero fences; `en.state.size` moves only if this chapter titles a fence the chain has not seen. 068 predicted all four of its deltas correctly; **a wrong one names its own cause**, which is the reason to write them down first.
 - [ ] T004 Capture the CI error-set baseline for the per-error comparison at close (SC-010), in `baseline.txt`. **An empty diff between two green runs carries nothing** and the record should say so when that is what happened.
-- [ ] T005 **Re-derive the fence bill** rather than copy R6's **83 English pages · 74 Vietnamese · 9 files · 18 blocks · 3 to CREATE**. Count the two language trees separately — `app/(en)` is what `check:fences` replays onto `relay-platform`, `app/(vi)` is mirror-compared against the English chapter and never against the tree (050-3). **Count blocks to CREATE, which a sweep of what exists cannot see**: `auth.ts`, `typing.ts` and `session.controller.ts` have no appendix block at all. `grep -rl 'title="[^"]*<file>"' 'app/(en)' 'app/(vi)' fences/` for pages; blocks and `@@` counts from `fences/post-series.md`. **Expect it to rise** — 4.15's rule has gone one direction every time, and the spec's own estimate was already 40% low.
-- [ ] T006 **Re-measure R1 against the tree**: 7 client-facing schemas carrying `channel`, 21 gateway sites writing `channel:` onto a frame (18 `session.ts`, 1 `fanout.ts`, 1 `resume.ts`, 1 `typing.ts`), and **0 references to a channel's external id anywhere in `services/gateway/src`**. The last figure is the one the whole design rests on: the gateway cannot translate because it has nothing to translate from.
-- [ ] T007 **Open the 21 sites and read them, do not grep them.** 065's T007 said fourteen and the real number was five, because a grep counts mentions. Record in `baseline.txt` which of the 21 write a channel the connection is a member of and which write one it is not — **a site writing a channel outside the map's population is a miss by construction**, and that is cheaper to find now than at T030.
+- [ ] T005 **Re-derive the fence bill** rather than copy R6's **83 English pages · 74 Vietnamese · 9 files · 18 blocks · 3 to CREATE**. Count the two language trees separately — `app/(en)` is what `check:fences` replays onto `relay-platform`, `app/(vi)` is mirror-compared against the English chapter and never against the tree (050-3). **Count blocks to CREATE, which a sweep of what exists cannot see**: `auth.ts`, `typing.ts` and `session.controller.ts` have no appendix block at all. `grep -rl 'title="[^"]*<file>"' 'app/(en)' 'app/(vi)' fences/` for pages; blocks and `@@` counts from `fences/post-series.md`. **Expect it to rise** — 4.15's rule has gone one direction every time, and the spec's own estimate was already 40% low. **Analysis pass 1 raised it before the task ran**: `services/gateway/src/api-client.ts` and `services/api/src/internal/memberships.controller.ts` are a second api→gateway contract carrying channel keys, live, and R6 counted neither. The bill now reads **11 files, 83+ pages**, and the two new rows carry `?` until this task measures them.
+- [ ] T006 **Re-measure R1 against the tree**: 7 client-facing schemas carrying `channel`, 21 gateway sites writing `channel:` onto a frame (18 `session.ts`, 1 `fanout.ts`, 1 `resume.ts`, 1 `typing.ts`), and **0 references to a channel's external id anywhere in `services/gateway/src`**. The last figure is the one the whole design rests on: the gateway cannot translate because it has nothing to translate from. **Give it its positive control** — the naive grep returns **5**, every one of them a user's external id (`connection-log/event.ts` 2, `isolation-fixtures.ts` 3), and a figure of 0 reported without the 5 beside it reads as a contradiction to whoever runs it next.
+- [ ] T006a **Re-count the premise BY STRUCTURE, not by field** (R1a), and record it in `baseline.txt`. A `channel` field is one way a frame names a channel; a map KEYED by one and a LIST of ids are two more, and `grep "channel:"` sees neither. Pass 1 found three on the first frame every client receives:
+
+```
+connection.ack.payload.revisions   z.record(channel, number)   frames.ts:83   session.ts:1322
+connection.ack.payload.cursor      z.record(channel, seq)      frames.ts:66   session.ts:1400
+connection.ack.payload.truncated   string[] of channel ids     frames.ts:67   session.ts:1354
+```
+
+**Sweep the whole client-facing surface this way before Phase 2**, because the design, the fence bill and SC-001's assertion count all move with the answer. **The word `truncated` appeared in no artifact of this feature until pass 1** — and `connectionAckSchema` is a `z.strictObject` whose payload is strict too, so each of the three is a two-sided contract change (T014).
+- [ ] T007 **Open the 21 sites and read them, do not grep them.** 065's T007 said fourteen and the real number was five, because a grep counts mentions. Record in `baseline.txt` which of the 21 write a channel the connection is a member of and which write one it is not — **a site writing a channel outside the map's population is a miss by construction**, and that is cheaper to find now than at T030. **Include the 22nd**, which the grep cannot see because the write is one call away: `reread()` at `session.ts:729` compares `api.memberships()` against `connection.channelIds` and publishes `channel: channelId` into `deliverMembership` at :741, on a timer, for every connection.
 - [ ] T008 **Check the bounding assumption the checklist flagged** (`checklists/requirements.md`, *scope is clearly bounded*): that the fan-out subjects and the resume cursor's storage do not have to move. Read `subjectForChannel` and its four siblings, and `resume.ts`'s storage and comparison. **If either has to be re-keyed the bill has moved and this is a different chapter** — which is the plan's own unjustification condition.
 - [ ] T009 **Find out whether the cross-tenant suite can attack a socket at all.** `services/api/src/isolation/gauntlet.itest.ts` attacks REST routes; constitution VI's third bullet names that suite. **If it cannot hold a WebSocket, record that as a gap rather than ticking the box** — `packages/e2e/src/harness.ts:176` already imports `ws`, so the question is whether the gauntlet may, not whether anything can.
 
@@ -46,11 +55,11 @@ two decisions into implementation and paid for it in every artifact that assumed
 other answer — a probe that could not go red, a receipt that did not exist, and a
 quickstart wrong twice from one cause.
 
-- [ ] T010 **Decide how a channel joined mid-session gets its identity** (FR-007, R3's hole). Three options are priced in `research.md` R3: the membership frame carries the identity, the gateway refetches its session on change, or the map falls back to the key. **Decide with a measurement, not a preference** — count membership changes per connection-hour on the lane, because the refetch option's whole cost is a round trip at that rate. Record the decision in `baseline.txt` and the refusal of the third option in writing.
+- [ ] T010 **Decide how a channel joined mid-session gets its identity** (FR-007, R3's hole). Three options are priced in `research.md` R3: the membership frame carries the identity, the gateway refetches its session on change, or the map falls back to the key. **Decide with a measurement, not a preference.** **And the second option is cheaper than R3 first costed it**, which pass 1 found by opening the file: `reread()` (`session.ts:713`) already calls `api.memberships()` on a timer for every connection, so **the round trip is already being made** — it goes to `GET /internal/memberships`, which returns `channel_ids` and no identities. Widening that response to pairs fills the map on a schedule that already exists, for no new request. Weigh that against the membership frame carrying the identity, and record the decision in `baseline.txt` with the refusal of the third option in writing.
 - [ ] T011 **Decide whether the resume cursor accepts both key forms, and how it tells them apart** (FR-003, R4). `cursorSchema` is `z.record(z.string(), z.number().int().positive())`, so **every client reconnecting across this deployment presents uuid keys** and a gateway understanding only identities resumes nothing, loses nothing visibly, and breaks constitution II in the quietest way it can break. **A cursor key has no shape test guaranteed to separate the two forms** — an `external_id` may itself be a uuid, 0 of 41,772 today and not forbidden. Pick shape-test-then-fall-back, or try-both-and-prefer-identity, and say what each does to the case the shape test gets wrong.
 - [ ] T012 **Decide the fallback when a key misses the map**, and write the reason (data-model, *The miss*). **It must not be the key** — emitting it hands a client the uuid this chapter exists to stop handing them, on exactly the channels they most recently joined. Whatever it is, it is in constitution VI's 100%-branch population the moment it exists (T039).
 - [ ] T013 **Decide whether this chapter needs an ADR**, and record the reasoning either way in `baseline.txt`. **Predicted no**, with an amendment to ADR-38's *"what it does not cover"* paragraph instead — that is the paragraph that named this gap. 4.21's plan predicted no and was wrong; 4.22's predicted yes and was right. **A prediction is worth nothing without the check.**
-- [ ] T014 **Confirm the session response widening is a change both sides can make at once.** `internal.ts` says *"Payloads are strict: unknown fields are rejected"* (constitution VI, fifth bullet), so a gateway reading a field an older api does not send, or an api sending one an older gateway rejects, is a deployment-order defect. Read how api and gateway versions move together in `compose.yaml` and in CI, and record whether this is a two-step change or a one-step one.
+- [ ] T014 **Confirm the session response widening is a change both sides can make at once.** `internal.ts` says *"Payloads are strict: unknown fields are rejected"* (constitution VI, fifth bullet), so a gateway reading a field an older api does not send, or an api sending one an older gateway rejects, is a deployment-order defect. Read how api and gateway versions move together in `compose.yaml` and in CI, and record whether this is a two-step change or a one-step one. **And `connectionAckSchema` is strict on both levels**, so T021a's and T021b's changes are two-sided against the CLIENT as well — every field the ack gains or re-keys is a change a client's own parser can refuse.
 
 ---
 
@@ -76,19 +85,21 @@ customer's identifier.
 **Independent test**: connect, provoke each of the seven frame kinds, read every
 `channel` field, and find no uuid.
 
-- [ ] T018 [US1] Write the red test first in `services/gateway/src/channel-naming.itest.ts`: connect a member, provoke each frame kind, and assert each `channel` field equals the customer's identifier. **It fails on all seven today**, which is the measurement that says the suite is pointed at the right thing. Per frame rather than in aggregate (SC-001).
+- [ ] T018 [US1] Write the red test first in `services/gateway/src/channel-naming.itest.ts`: connect a member, provoke each frame kind, and assert each `channel` field equals the customer's identifier — **and assert the ack's three structures separately**, `revisions`' keys, `cursor`'s keys and `truncated`'s members. **Ten assertions, not seven** (SC-001, as amended after pass 1). It fails on all ten today, which is the measurement that says the suite is pointed at the right thing.
 - [ ] T019 [US1] Extend `channelsForUser` in `relay-platform/services/api/src/db/repository.ts` to return the identity beside the key. `repository.ts:4106` already joins the row that holds both; **this is the method the bill charges 28 pages for**, and the plan's complexity table says to take a cheaper route if the identity can reach the controller without it.
 - [ ] T020 [US1] Change the session response's channel list to pairs in `relay-platform/packages/protocol/src/internal.ts`, and **fix the comment two lines above it** — the one that says internal uuids are the api's business while the field below carries them. That sentence is the evidence this was an oversight and it stops being true the moment T021 lands.
 - [ ] T021 [US1] Build the pairs in `relay-platform/services/api/src/internal/session.controller.ts`, replacing `channels.map(c => c.channel_id)` at :132.
-- [ ] T022 [US1] Hold the map on the connection in `relay-platform/services/gateway/src/auth.ts`, beside the `channelIds: Set<string>` already built from the same response at :103. **Nothing here applies a tenant scope and nothing here could forget to** — the scope arrives with the data (data-model), which is the property T038 measures rather than assumes.
+- [ ] T021a [US1] Re-key `connection.ack.payload.revisions` to identities, in `relay-platform/packages/protocol/src/frames.ts` (:83, and the comment above it that says *"every channel the user belongs to"*), `services/gateway/src/registry.ts` (:21), `auth.ts` (:46) and `session.ts` (:1322). **This is the one a count of `channel` fields could not see** — a map whose KEYS are channels, on the first frame every client receives, with zeros included so it names the whole membership.
+- [ ] T021b [US1] Re-key `connection.ack.payload.truncated` to identities in `relay-platform/services/gateway/src/session.ts` — :1354, which is `[...connection.channelIds]`, and :1392's filter over the backfill response. **A list of channel ids with no field name anywhere near it**, and the cheapest of the three to translate.
+- [ ] T022 [US1] Hold the map on the registry's `Connection` in `relay-platform/services/gateway/src/registry.ts`, beside the `channelIds: Set<string>` at :25 and **the channel-keyed `revisions: Record<string, number>` at :21** — which is the plainest argument for that home: the object already holds a map keyed by exactly the thing this chapter is re-keying. **Not `auth.ts:103`**, which R2 and the first draft of `data-model.md` both named: that is `channelIds: string[]` on the auth result (`auth.ts:42`), one hop earlier and not what `session.ts` or `fanout.ts` read. Carry the pairs through `auth.ts` to get them there. **Nothing here applies a tenant scope and nothing here could forget to** — the scope arrives with the data, which is the property T038 measures rather than assumes.
 - [ ] T023 [US1] Implement the lookup with Phase 2's fallback (T012) in the gateway, as one function with one caller shape, so the miss path is one branch rather than 21.
 - [ ] T024 [US1] Special-case `ALL_CHANNELS` **before the map is consulted** (R5). `membership.ts:75` is `export const ALL_CHANNELS = "*"`; a ban publishes it, and translating a sentinel turns a wildcard into a lookup miss. **The test belongs with the ban path**, not with the map.
 - [ ] T025 [US1] Read through the map at the 18 sites in `relay-platform/services/gateway/src/session.ts`.
 - [ ] T026 [US1] [P] Read through the map at the one site in `relay-platform/services/gateway/src/fanout.ts`.
 - [ ] T027 [US1] [P] Read through the map at the one site in `relay-platform/services/gateway/src/typing.ts`.
-- [ ] T028 [US1] Read through the map at the one site in `relay-platform/services/gateway/src/resume.ts`, **outbound only** — the cursor's storage and comparison stay on keys (R7), and its inbound half is T032.
+- [ ] T028 [US1] Read through the map at the one site in `relay-platform/services/gateway/src/resume.ts`, **outbound only** — the cursor's storage and comparison stay on keys (R7), and its inbound half is T032. The outbound cursor the ack mints (`session.ts:1400`) is re-keyed here, which is the third of the ack's three structures.
 - [ ] T029 [US1] Fill the map on a mid-session join per T010's decision, in whichever file that decision names.
-- [ ] T030 [US1] Re-run T018 and record **7 of 7 green**, plus the count of `channel` fields asserted. If any site discovered at T007 writes a channel outside the map's population, it surfaces here.
+- [ ] T030 [US1] Re-run T018 and record **10 of 10 green** — seven fields and three structures — plus the count of assertions. If any site discovered at T007 writes a channel outside the map's population, it surfaces here.
 - [ ] T031 [US1] Update the comment in `relay-platform/packages/protocol/src/frames.ts` to say what `channel` carries. **The type does not change** — `z.string().min(1)` in all seven — so the comment is the only place a reader of that file learns the value did.
 
 ---
@@ -98,7 +109,7 @@ customer's identifier.
 **Goal**: a client can say the identifier too, and a client holding a uuid is not
 silently misrouted.
 
-- [ ] T032 [US1] Accept both key forms on the resume cursor per T011's decision, in `relay-platform/services/gateway/src/resume.ts`. **Assert the uuid-keyed cursor resumes**, with a constructed cursor — no local run reproduces a client that connected before the deployment (quickstart §5).
+- [ ] T032 [US1] Accept both key forms on the resume cursor per T011's decision, in `relay-platform/services/gateway/src/resume.ts`. **The line is :80**, and what it does is FILTER: `Object.entries(cursors).filter(([channelId]) => channelIds.has(channelId))` drops any key the set does not hold — no error, no refusal, no log. **So FR-003's forbidden outcome is reached by a filter, not by a parse failure**, and an identity-keyed cursor meeting a key-holding set today resumes nothing and says nothing. **Assert the uuid-keyed cursor resumes**, with a constructed cursor — no local run reproduces a client that connected before the deployment (quickstart §5) — and assert the identity-keyed one is not filtered away.
 - [ ] T033 [US1] Accept the identifier on `messageSendSchema`'s channel field, translating to the key before the gateway knocks at the api's internal door.
 - [ ] T034 [US1] Accept the identifier on `typingSendSchema`'s channel field.
 - [ ] T035 [US1] Assert a send by identifier lands and a send by uuid still lands, **each separately** (SC-002, FR-003). Two assertions, because the chapter's promise and its compatibility claim fail for different reasons.
@@ -113,11 +124,11 @@ silently misrouted.
 **Independent test (US2)**: read the fan-out subjects, the resume cursors' storage
 and the api-facing contract; find keys, unchanged.
 
-- [ ] T037 [US2] Demonstrate rather than assert that the subjects and the internal send door are unchanged (SC-006): `git diff part4-ch22 --` over `subjectForChannel` and its four siblings and over `internalSendRequestSchema`, with the result stated. **One dot, not two** (067-3).
+- [ ] T037 [US2] Demonstrate rather than assert that the subjects and the internal send door are unchanged (SC-006): `git diff part4-ch22 --` over `subjectForChannel` and its four siblings and over `internalSendRequestSchema`, with the result stated. **One dot, not two** (067-3). **State `internalBackfillResponseSchema.channels` and `internalMembershipsResponseSchema.channel_ids` either way** — both are internal and both carry keys, and the second one is T010's open question rather than a thing this task can assume.
 - [ ] T038 [US1] Remove the map's tenant scope and record which named tests go red (FR-006, SC-005). **065-4 says to expect the single-mutation version to see nothing** — three chapters running — so if it reports zero, say which defence absorbed it rather than concluding the scope is untested.
 - [ ] T039 Pin the new files in `relay-platform/vitest.coverage.config.mts` and **run both halves of the pin probe through `pnpm coverage`**: a pin on a file that does not exist (silent) and an impossible pin on a real file (loud). A filtered `vitest run` evaluates no per-file threshold at all (066), and **a pin above the real number is loud while a pin below it is as silent as a pin on nothing** (067).
 - [ ] T040 Read the branch map, not the percentage, for any file that comes in under 100% — 068 spent three wrong readings on `channel-id.pipe.ts` before finding the uncovered arm was on `@Injectable()`, compiler-emitted and reachable by no test.
-- [ ] T041 Count what a client receives over a full session and state the number (SC-004): **zero channel Relay identifiers**, counted rather than asserted in aggregate.
+- [ ] T041 Count what a client receives over a full session and state the number (SC-004): **zero channel Relay identifiers**, counted rather than asserted in aggregate, **in any position — field, key or list member**. **This is the only criterion in the spec that would have caught the ack's three structures**, and at Phase 6 it catches them too late to be cheap. Run its sweep once at T006a as well, against the current binary, where the answer is still a measurement rather than a verdict.
 - [ ] T042 Record the gauntlet's answer from T009 — the attacks added, or the gap written down.
 
 ---
@@ -170,10 +181,12 @@ and the api-facing contract; find keys, unchanged.
 
 ```
 Phase 1  baseline            everything
+  T006a BLOCKS Phase 2 — it decides how big the surface is
 Phase 2  the decisions       BLOCKS Phase 4 and Phase 5 entirely
   T010 -> T029    T011 -> T032    T012 -> T023, T039, T053    T013 -> T043
 Phase 3  the clause          before Phase 4, deliberately (constitution VI.1)
 Phase 4  the map             T019 -> T020 -> T021 -> T022 -> T023 -> T025..T028
+                             T021a · T021b after T023, with the other sites
                              T018 is RED first and T030 closes it
 Phase 5  inbound             after T023; T032 also needs T011
 Phase 6  probes              after Phase 5
@@ -216,17 +229,24 @@ is already connected, and Phase 3 is what stops the next frame being guessed.
 Grepped for each identifier, then read:
 
 ```
-FR-001 every outbound field    T018·T025–T028·T030    SC-001  T018·T030
+FR-001 every outbound field    T018·T021a·T021b·T025–T028·T030    SC-001  T018·T030
 FR-002 every inbound field     T032–T034              SC-002  T035
-FR-003 the uuid is not lost    T011·T032·T035         SC-003  T020·T021
+FR-003 the uuid is not lost    T011·T032·T035         SC-003  T020·T021·T021a·T021b
 FR-004 confined to the edge    T008·T037              SC-004  T041
 FR-005 refused as today        T036                   SC-005  T038
 FR-006 scoped, demonstrated    T022·T038              SC-006  T037
 FR-007 mid-session membership  T010·T029              SC-007  T071
+FR-004 also T006a, which decides what the edge contains
 FR-008 a clause says which     T015·T017              SC-008  T066
 FR-009 nothing else changes    T037·T066              SC-009  T060
 FR-010 amend what is falsified T020·T031·T043–T047    SC-010  T004·T068
 ```
+
+**AND PASS 1 FOUND THAT THE WEAKNESS IS REAL, ON THIS LIST.** Every FR and SC had a
+named task, FR-001 among them — and FR-001's tasks covered seven `channel` fields
+while three more client-facing structures named channels by key and by list. **The
+check passed and the surface was wrong by three.** The repair was to re-measure the
+premise, not to add identifiers.
 
 **Every FR and SC is discharged by a named task, and that is the weakest kind of
 coverage this project recognises.** 4.22's pass 10 raised twenty alarms and all

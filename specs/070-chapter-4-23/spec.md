@@ -45,7 +45,11 @@ client-facing frame schemas carrying `channel`          7
   mediaUpdatedSchema · membershipChangedSchema · typingSchema · typingSendSchema
 
 sites in the gateway writing `channel:` onto a frame   21
+  and a 22nd one call away, in the revocation backstop   session.ts:741
+client-facing structures that name a channel by KEY or in a LIST   3
+  connection.ack.payload.revisions · .cursor · .truncated
 the gateway's references to a channel's external id     0
+  the naive grep returns 5, all of them a user's
 internalSendRequestSchema.channel_id                    z.string().uuid()
 session.controller.ts:132  channel_ids: channels.map(c => c.channel_id)
   …which is `members.channelId` — the uuid, straight off the join
@@ -55,6 +59,14 @@ FR-RTM clauses naming which identifier addresses a channel   0 of 10
 **THE GATEWAY CANNOT TRANSLATE TODAY BECAUSE IT HAS NOTHING TO TRANSLATE FROM.** It
 holds no external id for a channel anywhere. That is the shape of the work: not a
 rename, but giving the gateway the mapping it has never had.
+
+**AND A COUNT OF FIELDS CANNOT SEE A MAP THAT IS KEYED BY ONE.** The first version
+of this premise counted seven `channel` fields and twenty-one writes of them. The
+`connection.ack` payload also carries `revisions` and `cursor`, both keyed by
+channel, and `truncated`, a list of channel ids — three structures, on the one frame
+every client receives first, that no grep for `channel:` can find. **The surface is
+seven fields and three structures**, and the correction is here rather than in the
+plan because it is what the chapter is about.
 
 **AND THE SILENCE IS THE SAME SILENCE 4.22 FOUND.** No FR-RTM clause says which
 identifier names a channel, exactly as no FR-CHN clause said it before FR-CHN-11.
@@ -180,11 +192,16 @@ for the socket.
 
 - **SC-001**: Every frame kind that names a channel is provoked in one test and its
   `channel` field asserted to be the identifier — **7 of 7**, asserted per frame
-  rather than in aggregate.
+  rather than in aggregate; **and the three structures that name a channel by key or
+  in a list are asserted separately — `revisions`, `cursor` and `truncated`, 3 of
+  3.** Ten assertions, not one.
 - **SC-002**: A send by identifier reaches the channel, and a send by Relay
   identifier behaves as FR-003 requires, each asserted separately.
-- **SC-003**: The session response at connect carries no Relay identifier for a
-  channel.
+- **SC-003**: The first frame a client receives — `connection.ack` — carries no
+  Relay identifier for a channel, in a field, as a key, or in a list. **Stated about
+  the ack rather than about the internal session response**, because a client never
+  sees the latter and the criterion as first written could pass while every ack still
+  handed out uuids.
 - **SC-004**: Nothing a connected client receives over a full session contains a
   channel's Relay identifier — counted across the session, with the count stated.
 - **SC-005**: Removing the mapping's tenant scope turns at least one named test red.
