@@ -1,7 +1,12 @@
 # Quickstart — chapter 4.23, "The channel a socket names"
 
-**§0 to §2 are MEASURED on 2026-10-06. §3, §3b and §4 are PREDICTIONS** until phase 9
-runs them. **§2's COMMAND was rewritten at analysis pass 1 and has not been run in
+**§0 AND §1 ARE MEASURED on 2026-10-06. §2 WAS LABELLED MEASURED AND WAS NOT**, which
+analysis pass 8 established twice over: it printed `f.payload.channels ??
+f.payload.channel_ids`, neither of which exists on the ack, **and it connected with an
+`authorization` header, which the gateway's upgrade handler never reads** — it takes
+the token from `?token=` on `/v1/ws` and nothing else (`session.ts:758`). One wrong
+field is a typo; a wrong field and a refused handshake is a section nobody ran.
+**§2 onward are PREDICTIONS** until T006a and T064 run them. **§2's COMMAND was rewritten at analysis pass 1 and has not been run in
 that form** — the original printed `f.payload.channels ?? f.payload.channel_ids`,
 neither of which the ack has. What the new one prints is derived from
 `connectionAckSchema` and from the gateway holding no channel external id at all, so
@@ -23,6 +28,7 @@ DATABASE_URL=postgres://relay:relay@localhost:15432/relay node services/api/dist
 RELAY_POSTGRES_PORT=15432 docker compose --profile services build api gateway
 RELAY_POSTGRES_PORT=15432 docker compose --profile services up -d --wait
 export K=$(RELAY_POSTGRES_PORT=15432 node scripts/seed-demo-tenant.mjs 2>/dev/null | tail -1)
+export WS=ws://localhost:4001
 ```
 
 **BOTH IMAGES, NOT JUST THE API.** This chapter changes the gateway, and 4.11, 4.19
@@ -41,6 +47,23 @@ curl -s -X POST "localhost:4000/v1/channels/$ORD/members" -H "authorization: Bea
   -H 'content-type: application/json' -d "{\"user_ids\":[\"$U\"]}" >/dev/null
 ```
 
+Keep what the socket sections need — **the channel's Relay id, which this chapter is
+about not needing, and an end-user token, which no earlier draft of this quickstart
+minted**:
+
+```bash
+export ORD
+export UUID=$(curl -s "localhost:4000/v1/channels/$ORD" -H "authorization: Bearer $K" \
+  | node -pe 'JSON.parse(require("fs").readFileSync(0)).id')
+export T=$(curl -s -X POST localhost:4000/auth/dev-token -H "authorization: Bearer $K" \
+  -H 'content-type: application/json' -d "{\"user\":\"$U\"}" \
+  | node -pe 'JSON.parse(require("fs").readFileSync(0)).token')
+```
+
+`POST /auth/dev-token` takes `{user, ttl_seconds?}` and answers `{token, expires_at}`.
+**An api key is not a socket credential**: the gateway authenticates an end user, and
+§2 and §3b used a `$T` that nothing set.
+
 The channel is named `order-NNNNN` and the member is a person. **Both created by
 identifier, which is 4.22's work and the premise this chapter builds on.**
 
@@ -51,7 +74,10 @@ Connect with that user's token and print the `channel` field of whatever arrives
 ```bash
 node -e '
 const { WebSocket } = require("ws");
-const s = new WebSocket(process.env.WS, { headers: { authorization: `Bearer ${process.env.T}` } });
+// THE TOKEN GOES IN THE QUERY STRING. `server.on("upgrade")` reads
+// `url.searchParams.get("token")` and refuses any path but `/v1/ws`; an
+// authorization header is never looked at (session.ts:758).
+const s = new WebSocket(`${process.env.WS}/v1/ws?token=${process.env.T}`);
 s.on("message", (b) => { const f = JSON.parse(b);
   const c = f.payload?.channel ?? f.channel;
   if (c) console.log("  ", f.type, "channel =", c);
@@ -95,7 +121,7 @@ and SC-002 live here.
 ```bash
 node -e '
 const { WebSocket } = require("ws");
-const s = new WebSocket(process.env.WS, { headers: { authorization: `Bearer ${process.env.T}` } });
+const s = new WebSocket(`${process.env.WS}/v1/ws?token=${process.env.T}`);
 const say = (f) => s.send(JSON.stringify(f));
 s.on("open", () => {
   // by the name the customer gave it

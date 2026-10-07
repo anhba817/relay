@@ -90,6 +90,11 @@ docs/12:266's ordinal the new row's column one is `—` while the milestone's is
 quickstart.md §0      scripts/seed-demo-tenant.mjs and services/api/dist/db/
                       migrate.js both exist.
 
+the quickstart's frame shapes   typingSendSchema is exactly {type, payload:{channel}}
+                      (frames.ts:282) and messageSendSchema carries idem_key,
+                      channel, text and optional attachments (:90). §3b's frames
+                      are well-formed; only the connection under them was not.
+
 three of the six gates, RUN at pass 5, agreeing with what T003a inherited
   check:fences   291 fenced files across 65 chapters (46 translated, 2 retired)
   check:srs      246 clause rows, 246 unique identifiers, no duplicates
