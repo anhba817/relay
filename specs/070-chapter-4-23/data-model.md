@@ -24,7 +24,25 @@ behind the edge, unchanged either way
   registry.subscribersOf(channelId)                          keys
 ```
 
-## The map
+## The map, which is two maps
+
+**ONE DIRECTION IS NOT ENOUGH, AND ANALYSIS PASS 2 IS WHERE THAT SURFACED.** The
+first version of this section specified `Map<key, identity>` and FR-002 asks for the
+other direction: a client that may SAY the identity means three sites have to turn an
+identity back into a key.
+
+```
+key -> identity    the 21 outbound sites, the ack's three structures      READ
+identity -> key    session.ts:1620  channel_id into internalSendRequestSchema
+                   session.ts:1571  signalTyping, before subjectForTyping
+                   resume.ts:80     the cursor filter, against a key set
+```
+
+**The key→identity map is authoritative** — it is built from the session response,
+one row per channel — and the inverse is derived from it at the same moment. Two
+identities colliding on one key is impossible; **two keys colliding on one identity
+is impossible too, because `external_id` is unique per environment**, which is what
+makes the inverse safe to derive rather than a lossy second source.
 
 ```
 input:  the session response at connect, already scoped to this principal
@@ -41,6 +59,19 @@ read:   at the 21 sites that write `channel:` onto a client frame
 
 write:  at connect, and on whatever Phase 2 decides for a mid-session join
 ```
+
+**AND `connection.channelIds` STAYS A SET OF KEYS.** Three membership tests read it
+and all three invert silently if it ever holds identities:
+
+```
+session.ts:1493   signalTyping's guard — returns with no frame and no log
+session.ts:729    reread's set difference against api.memberships()
+resume.ts:80      the cursor filter
+```
+
+The second is the loudest failure of the three: a `channelIds` holding identities
+and an `api.memberships()` returning keys makes **every channel look both removed
+and added on every timer tick**, and the client is told so.
 
 **SCOPED BY ARRIVAL, NOT BY A PREDICATE.** The session response is built for one
 principal by an api that already knows the environment, so nothing in the gateway

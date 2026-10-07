@@ -77,5 +77,8 @@ two are told apart is Phase 2's decision and this contract's one open row.
   — a second api→gateway contract carrying keys, called on a timer by the
   revocation backstop (`api-client.ts:202`). Whether it widens to pairs is T010's
   decision, because the backstop is also the cheapest place to refresh the map.
+- **No change to `presence.changed`**, which carries `{user, state, transition}` and
+  names no channel, and **none to `message.ack`**, which carries `seq` alone. Both
+  were checked at pass 2 rather than assumed from the count of seven.
 - **No new frame kind, and no new field on an existing one.** Strict payloads reject
   unknown fields, so adding one is a two-sided change — and nothing here needs it.

@@ -51,6 +51,12 @@ same failure mode: nothing in this service would notice if the scope were droppe
 upstream.** FR-006 requires the probe, and 065-4 says to expect the single-mutation
 version to see nothing.
 
+**AND THE MAP RUNS BOTH WAYS, WHICH DOUBLES THE SURFACE.** Pass 2 found that FR-002
+needs `identity -> key` at three inbound sites, so there are two lookups to get
+wrong rather than one. The inverse is derived from the same session response and is
+safe to derive because `external_id` is unique per environment — but it is a second
+place a foreign key could enter if the response were ever unscoped.
+
 **The specific risk this chapter adds**: a key that misses the map. Whatever the
 fallback is, it must not be *emit the key* — a client receiving another tenant's uuid
 would be a leak, and a client receiving its own is the defect the chapter exists to
@@ -82,8 +88,12 @@ catching up with a decision already published.
 2. *100% branch coverage for tenant isolation.* The map's miss path is in that
    population the moment it exists.
 3. *The cross-tenant suite gates releases.* The gauntlet attacks REST. **Whether it
-   can attack a socket at all is a Phase 1 question** — if it cannot, that is a gap to
-   record rather than a box to tick.
+   can attack a socket at all is a Phase 1 question (T009), and the answer binds.**
+   The first draft of this plan said an unreachable socket would be *"a gap to record
+   rather than a box to tick"* — **constitution I does not offer that option**: the
+   suite MUST attack every endpoint with foreign IDs on every build. So either the
+   socket is attacked (T042a) or the clause is amended through its own process. The
+   exposure predates this chapter; the map is what makes it load-bearing.
 4. *The quickstart runs unmodified.* Still by hand; zero occurrences of `quickstart`
    in `ci.yml`.
 5. *Unknown fields rejected on write endpoints.* Engaged — the frames are strict
@@ -158,8 +168,10 @@ that name channels without a `channel` field** (`revisions`, `cursor`,
 `truncated`), which pass 1 found. Red first, and the red test is ten assertions
 rather than seven.
 
-**5 — The inbound half (P1).** Sends by identifier; the cursor accepting both forms
-per Phase 2's decision; `ALL_CHANNELS` special-cased before the map is consulted.
+**5 — The inbound half (P1).** Sends by identifier; **typing by identifier, which is
+the only inbound path that drops an unknown channel with no frame, no close code and
+no log line**; the cursor accepting both forms per Phase 2's decision; `ALL_CHANNELS`
+special-cased before the map is consulted.
 
 **6 — The probes.** Drop the map's scope and watch a named test fail. Whether the
 gauntlet can attack a socket at all. Both halves of the coverage pin probe, through

@@ -147,6 +147,9 @@ for the socket.
 - **`ALL_CHANNELS`**, the membership-change sentinel, which is not a channel and
   must not be translated.
 - **A resume cursor minted before this chapter**, keyed by uuid.
+- **An identifier arriving inbound**, which has to become a key before the api, a
+  subject or a cursor filter sees it — the translation runs in both directions and
+  the first draft of this spec described only one.
 
 ---
 
@@ -196,7 +199,9 @@ for the socket.
   in a list are asserted separately — `revisions`, `cursor` and `truncated`, 3 of
   3.** Ten assertions, not one.
 - **SC-002**: A send by identifier reaches the channel, and a send by Relay
-  identifier behaves as FR-003 requires, each asserted separately.
+  identifier behaves as FR-003 requires, each asserted separately — **and the same
+  pair for a typing frame**, which is the one inbound path with no refusal behind it:
+  an unknown channel there is dropped with no frame, no close code and no log line.
 - **SC-003**: The first frame a client receives — `connection.ack` — carries no
   Relay identifier for a channel, in a field, as a key, or in a list. **Stated about
   the ack rather than about the internal session response**, because a client never

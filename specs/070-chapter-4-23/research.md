@@ -58,6 +58,26 @@ and `truncated` is the cheapest of the three to translate, being one spread.
 these are contract changes on the client side rather than value changes, which is
 constitution VI's fifth bullet engaged harder than the plan assumed.
 
+## R1b — What pass 2 checked on the client surface and found CLEAN
+
+Recorded so a later pass does not walk them again. **A negative result is only worth
+anything written down.**
+
+```
+the api's refusal, forwarded verbatim to the socket
+  session.ts:1698   sendError(socket, error.code, error.publicMessage ?? …)
+  repository.ts:2789  ChannelNotFoundError's message IS `channel not found: ${id}`
+  messages.service.ts:166  …and the service throws a CONSTANT "channel not found"
+                           for FR-TEN-05, so no uuid reaches a client this way
+
+presenceChangedSchema  frames.ts:247   {user, state, transition} — no channel field,
+                       although presence publishes per subjectForPresence(channelId).
+                       Outside the chapter by design, not by oversight.
+
+messageAckSchema       frames.ts:118   {seq} alone. A send by identity is acked with
+                       nothing to translate.
+```
+
 ## R2 — Where the translation goes, and the cheap-looking option is the expensive one
 
 Three designs. The spec assumed the first; this section tested the second and found
@@ -66,8 +86,9 @@ it worse, for a reason that did not exist a day ago.
 **A — A MAP AT THE GATEWAY'S CLIENT EDGE.** The registry's `Connection` already
 holds `channelIds: Set<string>` (`registry.ts:25`) **and a channel-keyed
 `revisions: Record<string, number>` beside it** (`registry.ts:21`), both filled from
-the session response. It gains a parallel `Map<key, identity>`, and the sites read
-through it on the way out. **Not `auth.ts:103`, which the first draft of this
+the session response. It gains a parallel `Map<key, identity>` **and its inverse** — pass 2 found three
+inbound sites that need `identity -> key` — and the sites read through whichever
+direction they face. **Not `auth.ts:103`, which the first draft of this
 section named**: that is `channelIds: string[]` on the auth result (`auth.ts:42`),
 one hop earlier and not what `session.ts` or `fanout.ts` read. The registry's
 `Connection` is the right home for the plainer reason that it already holds a map
