@@ -220,7 +220,11 @@ for the socket.
 - **SC-007**: Journey 3 Stage 5 is reachable with the order number alone, which
   chapter 4.24's milestone then asserts end to end.
 - **SC-008**: `git diff --name-only part4-ch22 --` contains no file outside this
-  chapter's subject, tests and documents. One dot, not two (067-3).
+  chapter's subject, tests and documents — **run in `relay-platform` and in the
+  superproject, which is where that tag exists**. One dot, not two (067-3).
+  `relay-tutorial` carries no such tag, so the pages are bounded by the fence bill
+  and a commit-by-commit read instead, and the criterion says so rather than
+  implying a check it cannot make.
 - **SC-009**: The fence chain reports 0, and **every step of CI's tutorial job
   passes**: `pnpm lint`, `pnpm build`, `check:docs`, `check:srs`, `check:figures`,
   `check:fences`. **The job, not the gate set** — `pnpm build` is what catches an
