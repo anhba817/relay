@@ -76,6 +76,11 @@ presenceChangedSchema  frames.ts:247   {user, state, transition} — no channel 
 
 messageAckSchema       frames.ts:118   {seq} alone. A send by identity is acked with
                        nothing to translate.
+
+connection.revisions   auth.ts:104 builds it, session.ts:1322 reads it at the ack,
+                       and NOTHING compares it internally — two readers, both at an
+                       edge. So re-keying it where the connection holds it is safe,
+                       which was an assumption until pass 3 checked it.
 ```
 
 ## R2 — Where the translation goes, and the cheap-looking option is the expensive one
@@ -202,13 +207,25 @@ one. The plan should confirm that the inbound ambiguity is resolvable, because u
 a channel path segment, a cursor key has no shape test to fall back on: both forms
 are strings in a record, and the uuid shape test is the only thing separating them.
 
-## R5 — `ALL_CHANNELS` is not a channel
+## R5 — `ALL_CHANNELS` is not a channel, and a client never sees it
 
 `membership.ts:75` — `export const ALL_CHANNELS = "*"`. A ban is a removal from every
-channel and publishes this sentinel. **Translating it would turn a wildcard into a
-lookup miss**, and the fallback in R3's third option would then emit `"*"` to a
-client as though it were a channel's name. It must be special-cased before the map is
-consulted, and the test for it belongs with the ban path rather than with the map.
+channel and publishes this sentinel **onto the fabric**.
+
+**AND IT STOPS THERE, WHICH PASS 3 FOUND AND THIS SECTION ORIGINALLY GOT WRONG.**
+`session.ts:532` expands it: for each connection of that user, one recursive
+`deliverMembership` per channel in `connection.channelIds`, and the comment says
+*"each inner change names a real channel, so it takes the branch below and never
+this one."* So **no client frame ever carries `"*"`** — the first version of this
+section implied one could, and the contract carried a row saying the sentinel passes
+through unchanged.
+
+**The risk runs the other way.** The expansion reads the connection's KEY set and
+recurses with keys; translating at that site, or looking `"*"` up in the map at the
+guard, is what would break a ban. The sentinel must reach the guard untranslated and
+the expansion must stay keyed. **The test belongs with the ban path**, and what it
+asserts is that a banned user's frames name real channels by identity — not that a
+`"*"` arrived.
 
 ## R6 — What the fence chain charges, and the spec's estimate was 40% low
 

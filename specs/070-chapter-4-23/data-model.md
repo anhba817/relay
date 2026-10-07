@@ -22,7 +22,26 @@ behind the edge, unchanged either way
   the resume cursor's storage and comparison                 keys
   internalSendRequestSchema.channel_id                       z.string().uuid()
   registry.subscribersOf(channelId)                          keys
+  connection.channelIds                                      keys
+  marks, built from the backfill response                    keys
+  lastPublished, the typing debounce                         keys
 ```
+
+**AND ONE STRUCTURE IS ON BOTH SIDES OF THE EDGE, WHICH PASS 3 FOUND.**
+`connection.buffer` holds `Message[]` — the frames a resuming client is about to
+receive — and two internal comparisons index them by channel:
+
+```
+resume.ts:111   flushable  marks[frame.channel] ?? 0
+                a lost mark means every buffered frame is re-delivered
+session.ts:662  the revocation filter  m.channel !== change.channel
+                a lost match means a revoked channel's backlog is flushed (FR-029)
+```
+
+**Both are silent and both are user-visible**, so *where* the translation happens
+decides whether they survive. Translating at the outermost `send` leaves every frame
+in the buffer keyed and both comparisons intact; translating where the frame is
+built does not.
 
 ## The map, which is two maps
 

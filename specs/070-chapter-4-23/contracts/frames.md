@@ -40,7 +40,7 @@ client can absorb.
 | | before | after |
 |---|---|---|
 | every `channel` field | the Relay identifier | **the customer's identifier** |
-| `membershipChangedSchema` on a ban | `"*"` | `"*"` — unchanged, not a channel |
+| `membershipChangedSchema` on a ban | **never `"*"`** — `session.ts:532` expands the sentinel into one frame per real channel before any client sees it | one frame per real channel, **by identity** |
 | the session response's channel list | keys | **identities** |
 | a resume cursor the server mints | keyed by key | **keyed by identity** |
 | `connection.ack.payload.revisions` | keyed by key | **keyed by identity** |
@@ -55,6 +55,14 @@ client can absorb.
 | a resume cursor keyed by uuid | **accepted**, or constitution II is broken silently — and the thing that would break it is `resume.ts:80`, which FILTERS unknown keys out without a word |
 | a resume cursor keyed by identity | accepted |
 | an identifier the user may not hear | refused exactly as today, revealing nothing new |
+
+**AND THE BUFFER IS WHERE A CLIENT-FACING FRAME IS ALSO INTERNAL STATE.** A
+`Message` waiting in `connection.buffer` is the frame a client will receive **and**
+the row two internal comparisons index by channel: `flushable`'s
+`marks[frame.channel]` (`resume.ts:111`) and the revocation filter's
+`m.channel !== change.channel` (`session.ts:662`). Whatever this contract says about
+`channel` therefore decides whether those two keep working, which is why *where* the
+translation happens is a contract question and not an implementation detail.
 
 **THE INBOUND AMBIGUITY HAS NO SHAPE TEST TO FALL BACK ON.** A channel path segment
 either parses as a uuid or cannot — that is what let 4.22 decide by shape. A cursor

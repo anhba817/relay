@@ -150,6 +150,11 @@ for the socket.
 - **An identifier arriving inbound**, which has to become a key before the api, a
   subject or a cursor filter sees it — the translation runs in both directions and
   the first draft of this spec described only one.
+- **A frame held rather than sent.** A message waiting in a resuming connection's
+  buffer is both what a client will receive and what two internal comparisons index
+  by channel. Whichever name it carries while it waits, both must keep working.
+- **A ban**, which never reaches a client as a wildcard: the sentinel is expanded
+  into one frame per real channel before any socket sees it.
 
 ---
 
