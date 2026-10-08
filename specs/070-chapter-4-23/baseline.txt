@@ -623,3 +623,27 @@ AND THE SUBMODULE TRAP, WHICH COST A COMMIT.
   claim about what is on disk, and the fence chain is a claim about `relay-platform`'s
   HEAD, not about what has been committed anywhere.** Committed inside each submodule
   first, then the superproject's two gitlinks.
+
+================================================================================
+PHASE 9 — THE RECORD AND THE CLOSE.  2026-10-08.
+
+T062 — THE BATTERY, AND IT FOUND A LANE I HAD NEVER RUN.
+  Composed services confirmed down by name first: clamav, clickhouse, mailpit,
+  minio, nats, postgres and redis up; api, gateway, dispatcher and media-worker not.
+
+  First run: **12 of 14 tasks**, with `@relay/e2e` failing 7 tests in
+  `tuan.itest.ts` and 1 in `webhooks.itest.ts`, plus one api media test.
+
+  **`packages/e2e` IS A LANE NO EARLIER PHASE RAN**, and it failed for the same
+  reason the sixteen gateway tests did: `harness.ts:296` filters a client's timeline
+  with `f.payload.channel === channel`, where `channel` was the uuid the seed
+  returned. After this chapter the frame carries `fleet`, so the filter matched
+  nothing — *"expected [] to deeply equal [1, 2, 3, 4]"*.
+
+  The seed hands clients the NAME now. Sending still accepts either form; reading
+  only ever sees one. **4 files, 11 tests, EXIT 0.**
+
+  **The lesson is the one 060 recorded about `pnpm lint`**: a lane nobody ran is a
+  lane that holds whatever it held. Phases 4 and 5 ran the gateway and api lanes and
+  called the chapter green; the e2e lane was two commands away and would have said
+  otherwise at any point.
