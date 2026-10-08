@@ -555,3 +555,45 @@ T039 / T040 — NO PIN IS MOVED, AND THAT IS THE FINDING.
   four the answer is no, and for the fourth the lane was not clean enough to ask.
   **Lowering a ratchet to fit a number taken from a red lane is the failure the
   ratchet exists to prevent.** The pins stand; CI decides at T068.
+
+================================================================================
+PHASE 8 — THE CHAPTER.  2026-10-08.
+
+  2,204 prose words · 4 figures as `code` · 1 TRAP · 2 WHY · 1 Checkpoint · 0 SkipAhead
+  registered at /part-4/chapter-23/the-channel-a-socket-names, and `pnpm build`
+  accepted the id — the step that throws `Error: Unknown chapter id` and the one no
+  task ran until analysis pass 10 added it.
+
+ALL SIX GATE PREDICTIONS LANDED, WRITTEN AT T003a BEFORE ANY CODE:
+  check:fences   chapters  65 -> 66    ✓
+  check:fences   files    291 -> 291   ✓   the chapter titles no fence; it publishes
+                                           everything through the appendix
+  check:docs     revisions 30 -> 31    ✓
+  check:srs      rows     246 -> 247   ✓
+  check:figures  figures  330 -> 334   ✓   and the 3 unused exports are still the
+                                           pre-existing ones, named in T003
+  check:errors   34/34/6 UNCHANGED     ✓   a predicted zero, and the gate CI never runs
+
+THE FENCE BILL: 20 FILES, NOT 12, AND THE EIGHT IT MISSED ARE TESTS.
+  The bill counted the files the subject touches. `channel_ids` becoming pairs is a
+  TYPE change, so the compiler named every stub that constructs a session response —
+  and eight of those stubs live in files the fence chain publishes:
+  `session.test.ts`, `resume.itest.ts`, `typing.itest.ts`, `connections.itest.ts`,
+  `isolation.itest.ts`, `isolation-fixtures.ts`, `public-surface.itest.ts`,
+  `internal.itest.ts`.
+
+  **4.15's rule a FIFTH time in this feature** — ~50 across 7, then 83 across 9, then
+  83+ across 11, then 98 across 12, and now 20 files charged — and from a direction
+  it had not come from before: every earlier correction added a source file the
+  reading missed, and this one adds the tests the COMPILER found.
+
+  63 hunks in the end, all to the appendix, because the chapter titles no fence.
+
+AND RULE 1 FIRED ON exactly ONE FILE.
+  `resume.itest.ts` at -U6: 15 hunks, and one pre-image matched **4 times** —
+  `session: async () => ({` appears eight times in that file. At -U10: **7 hunks,
+  every pre-image unique.** Widening merged hunks and that helped here, which is not
+  guaranteed: the fence-chain note records a case where -U8 was WORSE than -U6
+  because a merged hunk spans more repetition than either half did. The width was
+  found by measuring each hunk's pre-image against the replayed state, not by trying
+  the checker until it stopped complaining.
