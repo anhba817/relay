@@ -263,3 +263,95 @@ AND THE LANE IS RED IN THE FILE THIS CHAPTER TOUCHES — `typing.itest.ts`.
   (188 mentions), and SC-010 compares CI error sets. A pre-existing red in exactly
   this file makes every later failure ambiguous unless it is written down first.
   Not this chapter's subject (FR-009). Carried to gaps.md and to Phase 9.
+
+================================================================================
+PHASE 4 — THE MAP.  2026-10-08.
+
+WHAT WENT IN
+  internal.ts            session response: `channel_ids` -> `channels` [{id, external_id}]
+                         memberships response: the same, because the backstop needs it
+                         `revisions` stays keyed by the KEY on this hop, and the
+                         gateway re-keys it at the ack
+  repository.ts          `channelsForUser` selects `external_id` — a column, no join
+  session.controller.ts  builds the pairs
+  memberships.controller.ts  builds them too
+  channels.controller.ts `announce` reads the row back for the identity, because
+                         4.22's pipe consumed it before the handler ran
+  membership.ts          the fabric payload carries `channel_identity`, optional
+  auth.ts / registry.ts  the Connection holds `identities` and `keys`, derived from
+                         one list; `channelIds` stays a key set
+  session.ts             `send(connection, frame, logger)` — ONE place, which also
+                         re-keys the ack's revisions, cursor and truncated
+  frames.ts              the comment that is the only place a reader learns the value
+                         changed, since the type did not
+
+THE COMPILER NAMED EVERY CONSTRUCTION SITE, WHICH IS WHAT THE TYPE CHANGE IS FOR.
+  connections.itest.ts · resume.itest.ts · typing.itest.ts · session.test.ts ·
+  internal.itest.ts — 13 stub sites. Every stub outside the new suite sets the
+  identity EQUAL to the key, so those suites keep asserting what they asserted.
+
+AND 044's WARNING DID NOT FIRE, WHICH IS WORTH SAYING PLAINLY.
+  `channelsForUser`'s comment warns that widening it breaks `memberships.controller`.
+  Adding a column is additive and `.map((c) => c.channel_id)` kept compiling. The
+  warning is about `string[]` becoming objects, which happened at 044. T019 quoted
+  it and it cost nothing here — a prediction checked and not met.
+
+THE LANE: 16 FAILURES, THEN 1
+  First full run after the change: 16 failed of 233, across membership.itest.ts,
+  isolation.itest.ts, public-surface.itest.ts and typing.itest.ts. Every one the
+  same shape — `expected [ 'attacker-channel' ] to include '<uuid>'` — a test
+  asserting the OLD answer. They are updated to assert the identity, which makes
+  them catch a regression to uuids rather than enforce one.
+
+  ONE WAS NOT A STALE TEST. The revocation backstop's `reread` delivered additions
+  with NO identity, so `send` dropped them: the frame announcing a channel would
+  have been the one frame unable to name it. That is why the memberships response
+  carries pairs — analysis pass 1's C4 coming due, as a defect rather than a tidy.
+
+  AND ONE FIXTURE PRE-DATED THE CONTRACT. `typing.itest.ts` publishes a membership
+  change by hand with no `channel_identity`; the gateway dropped the typing frame
+  that followed and the test failed with the flake's exact signature. The drop is
+  T012's designed behaviour and this is how it was first observed. A fixture
+  imitating the api has to carry what the api now sends.
+
+  Final: 232 of 233, the one failure being `typing.itest.ts > delivers one frame to
+  a member on another instance, naming the signaller` — THE SAME TEST CI FAILED ON
+  AT THE BASELINE. The lane is back to the condition Phase 1 recorded.
+
+AND A LINT RULE IS A CONSTITUTION CLAUSE, FOR THE FOURTH TIME IN THIS PROJECT.
+  The sweep's first version imported `ioredis` to publish a fabric message and was
+  refused: the client is restricted to the two limiter files (constitution I). No
+  exemption was sought — `createTyping` is how the gateway publishes, so a second
+  instance stands in for another gateway exactly as `publishFromElsewhere` does for
+  the fan-out. **Not needing an exemption is better than earning one.** It cost one
+  frame kind: `Membership` exposes no publish, because the api owns that subject,
+  so the membership frame is asserted in `membership.itest.ts` instead.
+
+T024 — `ALL_CHANNELS`, VERIFIED RATHER THAN READ.
+  `membership.itest.ts > a ban revokes everything at once > tells the banned user
+  once per channel, sentinel-free` passes. The expansion at session.ts:532 precedes
+  every send, so no `"*"` reaches `send` and nothing needed special-casing there.
+
+T030 — WHERE THE TEN ASSERTIONS LIVE.
+  channel-naming.itest.ts   the ack's revisions, cursor and truncated; a delivered
+                            message.created; and a whole-session sweep asserting
+                            the kinds received and that no key appears in any of them
+  membership.itest.ts       membership.changed, six assertions, now on the identity
+  typing.itest.ts           typing frames
+  isolation.itest.ts        the ack's cursor, three assertions, in the gauntlet
+  public-surface.itest.ts   the ack's cursor over the real public API
+
+THE API LANE — 4 FAILED OF 1,001, AND TWO OF THEM WERE MINE
+  internal.itest.ts, twice: **a hand-written cast is a hole in the instrument.**
+  Two tests read the session response as `(await res.json()) as { channel_ids:
+  string[] }` — a shape ASSERTED rather than read — so the type change that named
+  thirteen construction sites could not name these. They parse the schema now, which
+  puts them back inside the instrument. 14 of 14 after the fix.
+
+  media-updated.itest.ts and storage-metering.itest.ts: **both pass when run alone,
+  17 of 17.** Whole-lane interaction, in two media suites this chapter does not
+  touch — 063-4's family, an assertion reading state that is not its own. **There is
+  no api-lane baseline to compare against**, because Phase 1 skipped the integration
+  battery with the composed stores up (T002 said so at the time). That omission has
+  now cost exactly what it was always going to cost: two failures that cannot be
+  classified from the record. T062 re-runs the full lane at the close.
