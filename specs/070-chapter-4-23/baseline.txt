@@ -355,3 +355,33 @@ THE API LANE — 4 FAILED OF 1,001, AND TWO OF THEM WERE MINE
   battery with the composed stores up (T002 said so at the time). That omission has
   now cost exactly what it was always going to cost: two failures that cannot be
   classified from the record. T062 re-runs the full lane at the close.
+
+================================================================================
+PHASE 5 — THE INBOUND HALF.  2026-10-08.
+
+  session.ts:1620   a send translates identity -> key before the api's door, which
+                    stays `z.string().uuid()`
+  session.ts:1571   typing translates before `signalTyping`, the one inbound path
+                    whose refusal is a silent drop
+  resume.ts:74      `scopeCursors` takes the map and tries the identity first
+
+A VALUE THE MAP DOES NOT HOLD IS PASSED THROUGH UNCHANGED, which is the whole of
+FR-005: the api refuses it exactly as it refuses an unknown uuid today. 068-2 is why
+— a resolver that REFUSES answers before the checks a handler makes on purpose, and
+a banned user could then tell a real channel from an invented one.
+
+  channel-naming.itest.ts   7 of 7
+    the ack's three structures, and no key anywhere in the payload
+    a delivered message.created names the identity
+    a whole session: 3 kinds received, no key in any of them (SC-004)
+    a send by identifier — the api is handed the KEY
+    a send by the Relay identifier, SEPARATELY (FR-003)
+    an unnameable channel passed through verbatim (FR-005)
+    a cursor keyed by the identity AND one keyed by the uuid both resume (FR-003)
+
+THE WHOLE GATEWAY LANE IS GREEN: 13 files, 238 tests, EXIT 0 — including
+`typing.itest.ts`, which failed in three runs of four at the baseline. **ONE GREEN
+RUN IS NOT EVIDENCE THE FLAKE IS GONE** (045: "8 of 8 green was not evidence"), and
+nothing in this chapter addressed it. It is recorded as still open.
+
+  unit lane, forced: 13 of 13 tasks, 952 tests, EXIT 0 — unchanged from the baseline.
