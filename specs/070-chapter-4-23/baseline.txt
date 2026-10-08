@@ -1,0 +1,158 @@
+BASELINE — feature 070, chapter 4.23, "The channel a socket names"
+Phase 1, measured 2026-10-08. Figures in the order they were taken, including the
+ones that corrected an artifact.
+
+T001 — THE LANE
+  RELAY_POSTGRES_PORT=15432 · docker compose up -d --wait · EXIT 0 captured OUTSIDE
+  a pipeline (the `tail` trap, seven times in this project's record)
+
+  environments  38,994      channels  44,574      members   195,220
+  users        218,507      messages 231,936
+
+  channels was 41,772 at 068's close four days ago. The lane moves; record the counts
+  beside every later timing.
+
+T002 — THE DOCKER-FREE LANES
+  pnpm lint                 EXIT 0   1 of 1 cached, 1.119s  FULL TURBO
+  turbo run typecheck       EXIT 0   15 of 15 cached, 14ms  FULL TURBO
+  pnpm test                 EXIT 0   13 tasks, 4 cached, 3.311s — so nine RAN
+                                     952 tests across 81 files, 0 failed
+  The integration battery is NOT in this baseline: the composed services are up for
+  T001's counts, and the api lane wants them down (068-9). T062 runs it at the close.
+
+T003 — THE GATES  (five scripts, SIX programs: check:docs runs two)
+  check:fences   EXIT 0  291 fenced files replay onto relay-platform across 65 chapters
+  check:figures  EXIT 0  330 figures · 332 imported bindings resolve · 3 export(s) unused
+  check:docs     EXIT 0  all mirrored docs match · 30 revisions ascend, 1.0 to 1.29
+  check:srs      EXIT 0  246 clause rows, 246 unique identifiers, no duplicates
+  check:errors   EXIT 0  34 codes, 34 sections, 6 close codes
+  THE THREE UNUSED FIGURE EXPORTS ARE PRE-EXISTING: figCursorStability in (en) and
+  (vi) part-2/chapter-04, figTwoCounters in (vi) part-3/chapter-11.
+  check:errors runs in NO CI job — hand-run or not run.
+
+T003a — THE PREDICTED DELTAS, written before any code
+  check:fences   chapters  65 -> 66    the walker found the page        T058
+  check:fences   files    291 -> ?     this chapter titles fences       T005
+  check:docs     revisions 30 -> 31    SRS 1.30                         T048
+  check:srs      rows     246 -> 247   FR-RTM-11, and unique            T015
+  check:figures  figures  330 -> 334   four, as 4.22 shipped four       T052
+  check:errors   34/34/6  UNCHANGED    T036 refuses exactly as today    T036
+
+T004 — THE CI BASELINE, AND IT IS RED
+  run 37482921334 on 8809846 ("docs(068): close 4.22")   CONCLUSION: failure
+    success  relay-platform — the sealed integration
+    success  relay-platform — the Docker-free gate
+    FAILURE  relay-platform — integration lanes and coverage
+    success  relay-tutorial — build, docs drift, fence chain
+
+  two distinct failing tests, both in the gateway:
+    gateway lane   1 failed of 231 · 1 file of 12
+      typing.itest.ts > a typing signal on its way out > delivers one frame to a
+      member on another instance, naming the signaller
+      "only 0 of 1 typing frames for d6490d29-…; saw connection.ack"  :469
+    coverage       1 failed of 2302 · 1 file of 155
+      meter.itest.ts > a signal, and what it does to a bill > a report the api
+      refuses breaks nothing a customer can see (constitution III)
+
+  068's close reported CI green on all four jobs and recorded typing.itest.ts and
+  limits.itest.ts as flakes that cleared on re-run. THE NEXT PUSH FAILED ON
+  typing.itest.ts AGAIN AND WAS NOT RE-RUN. So this chapter opens on a red CI whose
+  failure is in a file the chapter edits — the worst baseline for SC-010, because a
+  failure at the close is then ambiguous. Not this chapter's to fix; its to know.
+
+T005 — THE FENCE BILL, RE-DERIVED, AND IT ROSE AGAIN
+                                              en    vi   appendix blocks
+  packages/protocol/src/frames.ts              6     5     1
+  packages/protocol/src/internal.ts           14    12     4
+  services/gateway/src/session.ts             17    16     2
+  services/gateway/src/auth.ts                 6     6     0   CREATE
+  services/gateway/src/fanout.ts               3     3     2
+  services/gateway/src/resume.ts               2     2     1
+  services/gateway/src/typing.ts               1     1     0   CREATE
+  services/gateway/src/registry.ts             7     7     0   CREATE
+  services/gateway/src/api-client.ts           6     6     0   CREATE
+  services/api/src/internal/session.controller.ts
+                                               6     6     0   CREATE
+  services/api/src/internal/memberships.controller.ts
+                                               2     2     0   CREATE
+  services/api/src/db/repository.ts           28    23     8
+                                              --    --    --
+                                              98    89    18   6 to CREATE
+
+  THE TRAIL: ~50 across 7 (spec) -> 83 across 9 (R6) -> 83+ across 11 (pass 1)
+  -> 98 across 12, 6 to create (here). 4.15's rule, fourth measurement, same
+  direction every time. `registry.ts` entered at pass 2 as the map's home and was
+  never costed; api-client.ts and memberships.controller.ts entered at pass 1.
+  The last two are conditional on T010's decision.
+
+T005a — WHAT THIS CHAPTER MAKES UNTRUE IN PUBLISHED CHAPTERS
+  19 English lines match "a channel-ish token near a uuid", and the split matters:
+    FENCED, TITLED   11 `channel` + 6 `channel_id`   platform source; moves with the
+                                                     platform file, not with prose
+    FENCED, UNTITLED  2 `channel`                    OUTSIDE EVERY GATE
+    PROSE             0
+  The two are app/(en)/part-2/chapter-06/two-servers-one-conversation/page.mdx:1899
+  and :1900 — a terminal transcript of two delivered `message.created` frames whose
+  payload carries a channel uuid. One file, one chapter, two lines, plus the vi
+  mirror. T049a's decision is therefore cheap, which it was not before it was split.
+
+T006 — R1 RE-MEASURED, AND ONE PREMISE MOVED
+  client-facing schemas carrying `channel`            7      unchanged
+  gateway `channel:` occurrences                     21      unchanged
+    session.ts 18 · fanout.ts 1 · resume.ts 1 · typing.ts 1
+  gateway refs to a channel's external id             0      (naive grep 5, all
+                                                             a USER's — the control)
+
+  AND THE PREMISE THAT MOVED:
+  uuid-shaped channel external_ids                   19      4.22 measured 0 of 41,772
+  of those, external_id equals ANOTHER CHANNEL'S id  19      exactly all of them
+
+  So the ambiguity `contracts/frames.md` called theoretical is live: nineteen strings
+  are simultaneously one channel's identity and another's key. 4.22's tie-break
+  (`order by (external_id = $2) desc`) decides REST; on the socket it means A SHAPE
+  TEST CANNOT SEPARATE THE TWO FORMS IN A CURSOR. T011's decision is settled by
+  measurement rather than preference: try both, prefer the identity.
+
+T006a — THE PREMISE COUNTED THE WRONG THING, AND T007 SHOWS HOW BADLY
+  connection.ack.payload.revisions   z.record(channel, number)   frames.ts:83
+  connection.ack.payload.cursor      z.record(channel, seq)      frames.ts:66
+  connection.ack.payload.truncated   string[] of channel ids     frames.ts:67
+  Three structures naming channels with no `channel` field, on the first frame every
+  client receives.
+
+T007 — THE 21 SITES, READ RATHER THAN GREPPED, AND ONLY 3 ARE FRAMES
+  session.ts:420   revision.channel          CLIENT FRAME
+  session.ts:474   signal.channel            CLIENT FRAME   (typing)
+  session.ts:604   change.channel            CLIENT FRAME   (membership)
+  session.ts:467, 594, 635, 645, 672, 679, 705, 1253, 1263   LOG LINES
+  fanout.ts:170    message.channel           LOG LINE
+  typing.ts:141    signal.channel            LOG LINE
+  resume.ts:84                               A COMMENT
+  session.ts:538, 546   ALL_CHANNELS guard and its recursion   INTERNAL
+  session.ts:736, 745   reread -> deliverMembership            INTERNAL
+  session.ts:1518  typing publish -> subjectForTyping          INTERNAL
+  session.ts:1644  fanout publish -> committed.channel_id      INTERNAL
+
+  3 frames · 11 logs · 6 internal · 1 comment.  R1's headline counted occurrences of
+  a string and called them frame writes. TRANSLATING A LOG LINE OR A PUBLISH WOULD BE
+  A DEFECT — an operator's line names the key, and a publish derives a subject.
+
+  AND THE MESSAGE FRAME IS NOT IN THAT LIST AT ALL. `message.created` reaches a client
+  as a payload FORWARDED from the api, so no `channel:` literal in the gateway writes
+  it. A design that edits 21 sites would miss it; a wrapper at the single `send`
+  (session.ts:119) catches it. Phase 1 has therefore answered T012a with a
+  measurement rather than a preference.
+
+T008 — THE BOUND HOLDS
+  subjectForChannel · subjectForChannelRevision · subjectForPresence · subjectForTyping
+  · subjectForChannelMembership — five siblings, all deriving a subject from a key.
+  resume.ts keys its storage and comparison by key: channelIds.has(channelId) :80,
+  marks[channelId] :99, marks[frame.channel] :111 and :134.
+  Neither has to move. The chapter's bound is intact and the complexity table's
+  unjustification condition has not fired.
+
+T009 — ANSWERED, AND THE ANSWER WAS ALREADY IN THE TREE
+  services/gateway/src/isolation.itest.ts — the socket half of the gauntlet, and the
+  count is 22 tests, not the 23 analysis pass 13 reported from a looser grep.
+  Constitution I is satisfied. What remains is that the suite derives its targets
+  from frameSchema's members and is green by construction against a value change.
