@@ -529,3 +529,29 @@ THE BASELINE COVERAGE RUN WAS INVALID, AND THE REASON IS THE HAZARD PASS 15 NAME
   remain unclassified — the HEAD coverage run was at least coherent (its dist was
   built from its own source, nine minutes earlier) — and the cheaper next step is to
   re-run those eight suites alone rather than the whole lane again.
+
+AND THE 18 ARE THE COVERAGE LANE'S, NOT THE CHAPTER'S — MEASURED RATHER THAN ARGUED.
+  Every one of the eight suites, run in its own lane against the same tree:
+
+    api: consumer + notifications + outbox + deliveries   88 of 88    EXIT 0
+    dispatcher                                            16 of 16    EXIT 0
+    ingester                                              24 of 24    EXIT 0
+    media-worker                                          32 of 32    EXIT 0
+    packages/test-harness                                 46 of 46    EXIT 0
+
+  So 18 tests fail only when 156 files share one serial process, and none of them is
+  in a file this chapter changed. 063-4's family, now with evidence on both sides
+  rather than a resemblance. CI's own coverage run is the arbiter at T068.
+
+T039 / T040 — NO PIN IS MOVED, AND THAT IS THE FINDING.
+  `services/ingester/*` reads low because that service is spawned as a CHILD PROCESS
+  by the suites that exercise it (062), and `ingest.itest.ts` failed in the lane as
+  well, removing even the in-process part. `services/gateway/src/presence.ts` reads
+  lines 100, branches 100, **functions 96.96** against a pin of 100 — one function
+  defined and never called, in a file this chapter does not touch, during a run with
+  eight suites failing early.
+
+  T040's first question is whether the code ran in THIS process. For three of the
+  four the answer is no, and for the fourth the lane was not clean enough to ask.
+  **Lowering a ratchet to fit a number taken from a red lane is the failure the
+  ratchet exists to prevent.** The pins stand; CI decides at T068.
