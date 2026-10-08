@@ -597,3 +597,29 @@ AND RULE 1 FIRED ON exactly ONE FILE.
   because a merged hunk spans more repetition than either half did. The width was
   found by measuring each hunk's pre-image against the replayed state, not by trying
   the checker until it stopped complaining.
+
+T059 — THIS CHAPTER IS NOT TRANSLATED, AND THE SERIES STOPPED AT 4.8.
+  The measurement, re-checked: `app/(vi)/vi/part-4` holds chapters 01, 02 and 03
+  against 24 in English; 46 Vietnamese pages in the whole series; and **no chapter
+  has touched a Vietnamese file since 4.8 (feature 053)** — fourteen chapters, with
+  055's fence repair the last vi commit. `check:fences` prints its success line
+  through all of them, so the gate never asked for a mirror.
+
+  **So the honest options were: translate it, say the series stopped and write why,
+  or leave the task and have it quietly not happen — which is what the last fourteen
+  chapters did.** This chapter takes the second. The vi tree is a Part 1-3 artefact
+  that Part 4 never continued, and a single translated Part 4 chapter at number 23,
+  with 4 through 22 missing, would be worse than none: it would imply the others
+  were skipped rather than that the practice stopped.
+
+  Recorded here rather than in a task list, so the next chapter inherits a decision.
+
+AND THE SUBMODULE TRAP, WHICH COST A COMMIT.
+  `git add -A relay-tutorial` from the superproject stages the GITLINK, not the
+  tutorial's own files: the commit that was supposed to carry the chapter carried
+  `baseline.txt` and nothing else, and the tutorial's seven changed files — four
+  mirrored docs, the appendix, the manifest and the new chapter directory — sat
+  uncommitted while every gate passed against the WORKING TREE. **A green gate is a
+  claim about what is on disk, and the fence chain is a claim about `relay-platform`'s
+  HEAD, not about what has been committed anywhere.** Committed inside each submodule
+  first, then the superproject's two gitlinks.
