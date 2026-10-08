@@ -9,7 +9,11 @@ FR-RTM-01/03 · `docs/03-journey-map.md` Journey 3 Stages 1 and 5 ·
 
 **Why this chapter exists.** Chapter 4.22 made thirteen REST routes take the
 identifier the customer gave a channel. The gateway did not change, and it was never
-asked to. So the same platform now answers one way on one surface and the other way
+asked to. **And there are three surfaces, not two** — analysis pass 16 found webhook
+payloads carrying `channel_id` as a Relay uuid on a boundary whose own comment says
+consumers *"get external ids and the field names the REST surface uses"* (R8). That
+one is nobody's chapter and is recorded rather than fixed here. For the two this
+chapter is about: the same platform now answers one way on one surface and the other way
 on the other — and `docs/12` §5 rule 4 says a milestone verifies rather than builds,
 so the fix is its own chapter placed before 4.24.
 

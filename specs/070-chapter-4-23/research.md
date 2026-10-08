@@ -349,6 +349,35 @@ compared against the English chapter and never against `relay-platform`. Whether
 this chapter translates anything is a decision (T059), and the honest default is
 whatever the last fourteen did, said out loud.
 
+## R8 — There is a THIRD customer-facing surface, and it is nobody's chapter
+
+Found at analysis pass 16 by asking whether REST and the socket are the only two.
+
+```
+services/api/src/outbox/event.ts
+  MessageCreatedData.channel_id      :20     a Relay uuid
+  MessageDeletedData.channel_id      :66     a Relay uuid
+  MembershipChangedData.channel_id   :83     a Relay uuid
+  8 occurrences · 3 payload types · 6 emitted event types
+  delivered to the customer's own endpoint by dispatcher/deliver.ts:79
+```
+
+**AND THE COMMENT ABOVE THE FIRST ONE STATES THE RULE IT BREAKS**, more plainly than
+`internal.ts` did for the socket: *"A message as the PUBLIC api returns it. Consumers
+are customers: they get external ids and the field names the REST surface uses.
+`user_id` does not cross this boundary."* The field under that sentence is
+`channel_id`. `MembershipChangedData` goes further — its `user` is annotated *"The
+EXTERNAL id. Never `users.id`"* and sits beside a channel's internal one.
+
+**It is a lookup-table burden, not a dead key or a disclosure.** Since 4.22 thirteen
+REST routes take either form, so a customer CAN act on the uuid — unlike 068-3's
+`members[].user_id`, which no route accepted. What fails is Journey 3's Stage 1
+promise of zero lookup tables, on the surface a customer's backend integrates with.
+
+**NOT THIS CHAPTER'S.** Recording it is the whole action: widening here is what the
+plan's complexity table warns against, and the milestone after this one should meet
+it as a handoff rather than a surprise.
+
 ## R7 — What this chapter must not do
 
 **It must not touch the fan-out subjects.** `subjectForChannel`,
