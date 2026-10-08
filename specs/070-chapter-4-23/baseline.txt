@@ -385,3 +385,83 @@ RUN IS NOT EVIDENCE THE FLAKE IS GONE** (045: "8 of 8 green was not evidence"), 
 nothing in this chapter addressed it. It is recorded as still open.
 
   unit lane, forced: 13 of 13 tasks, 952 tests, EXIT 0 — unchanged from the baseline.
+
+================================================================================
+PHASE 6 — THE PROBES.  2026-10-08.
+
+T037 — US2, DEMONSTRATED RATHER THAN ASSERTED (SC-006), in `relay-platform`:
+  git diff part4-ch22 -- fanout.ts typing.ts presence.ts revision.ts   0 lines
+  membership.ts changed, and 0 changed lines touch `subjectFor*`       payload only
+  internal.ts: no line matching `channel_id: z` changed — the api-facing send door
+  is still `z.string().uuid()`
+  So the five subject helpers and the internal door are untouched, measured against
+  the tag rather than claimed.
+
+T042a — THREE ATTACKS, HAND-WRITTEN, IN THE SUITE THAT DERIVES ITS OWN TARGETS
+  `services/gateway/src/isolation.itest.ts`, now 35 tests:
+    message.send naming the victim's channel by its IDENTITY is refused, and the
+      refusal names neither form — **and the identity is the sharper attack, because
+      `victim-channel` is a name an attacker can GUESS where the uuid had to be given**
+    a typing frame for the victim's channel reaches nobody, by key or by identity,
+      and the socket stays open — a refusal there would itself be the leak
+    a cursor naming the victim's channel by identity backfills nothing
+  They are hand-written because the suite derives its targets from `frameSchema`'s
+  members: it catches a frame type added and forgotten, and this chapter adds none.
+
+T038 — THE SCOPE PROBE, AND 065-4 HOLDS FOR THE FOURTH CHAPTER RUNNING
+  The predicate was named before it was deleted: `eq(users.environmentId,
+  this.environmentId)` in `channelsForUser` (repository.ts:4122).
+
+    with the scope DELETED   isolation.itest.ts (the socket gauntlet)  35 of 35 GREEN
+                             repository.itest.ts + internal.itest.ts   1 of 85 RED
+                             "membership writes with foreign ids affect zero rows"
+
+  **The socket gauntlet cannot see a scope removed one service away**, and that is
+  not a defect in the gauntlet: the map arrives already scoped, and the gateway's
+  own membership tests against `channelIds` absorb the difference. SC-005 is met by
+  the suite built for the question, which is 065-4's whole point — a single-mutation
+  probe measures the DEFENCE, not the arm.
+
+  The file was restored from a copy and `git diff` against HEAD is empty, which is
+  043's rule: clean up a probe before anything is counted.
+
+T039 / T040 — COVERAGE RAN AND THE LANE IS NOT CLEAN ENOUGH TO PIN AGAINST.
+  pnpm coverage: 156 files, 2,312 tests — **18 failed across 8 suites**, and NOT ONE
+  of them is in the gateway or in a file this chapter changed:
+
+    packages/test-harness/src/guard.itest.ts        1
+    services/api/src/consumer/consumer.itest.ts     1
+    services/api/src/notifications/…                1
+    services/api/src/outbox/outbox.itest.ts         2
+    services/api/src/webhooks/deliveries.itest.ts   1
+    services/dispatcher/src/dispatcher.itest.ts     4
+    services/ingester/src/ingest.itest.ts           4
+    services/media-worker/src/verify.itest.ts       5   "expected 'pending' to be 'rejected'"
+
+  Three threshold errors followed:
+    services/ingester/src/shape.ts        lines, statements, branches
+    services/ingester/src/clickhouse.ts   lines, statements, functions
+    services/gateway/src/presence.ts      functions 96.96 against a pin of 100
+
+  **THE INGESTER PAIR IS 062's FINDING, NOT A REGRESSION**: that service is spawned
+  as a CHILD PROCESS by the suites that exercise it, so none of it is instrumented —
+  and `ingest.itest.ts` failed four times here, which removes even the in-process
+  part. **`presence.ts` is lines 100, branches 100, functions 96.96** — one function
+  defined and never called, in a file this chapter does not touch, during a run
+  where eight suites failed early.
+
+  **SO THE PIN IS NOT MOVED.** A number taken while the lane is red is a claim about
+  the lane, and lowering a ratchet to fit it is the failure the ratchet exists to
+  prevent — *"a ratchet that teaches people to lower ratchets"*. T040's first
+  question is whether the code ran in THIS process, and here the answer for three of
+  the four is no.
+
+  AND THE COMPARISON THAT WOULD SETTLE IT DOES NOT EXIST. Phase 1 skipped the
+  integration battery and therefore coverage, with the composed stores up (T002 said
+  so). CI's baseline coverage run had **1 failure of 2,302**; this host has 18 of
+  2,312. 063-4 is the family — the same assertions fail on a developer host carrying
+  residue and pass on a clean one — but *family* is not *identification*.
+
+  NEXT, AND IT IS THE HONEST ORDER: get the lane clean (or confirm each failure
+  against `part4-ch22` in a worktree), THEN read the pins, THEN both halves of the
+  pin probe. Neither T039 nor T040 is marked.
