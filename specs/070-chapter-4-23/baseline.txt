@@ -156,3 +156,110 @@ T009 — ANSWERED, AND THE ANSWER WAS ALREADY IN THE TREE
   count is 22 tests, not the 23 analysis pass 13 reported from a looser grep.
   Constitution I is satisfied. What remains is that the suite derives its targets
   from frameSchema's members and is green by construction against a value change.
+
+================================================================================
+PHASE 2 — THE DECISIONS (BLOCKING).  2026-10-08.
+Two of the four were settled by Phase 1's measurements rather than by argument.
+
+T012a — WHERE THE TRANSLATION HAPPENS: AT THE SINGLE `send`.
+  Decided by T007, which read the sites instead of counting them. Of 21 `channel:`
+  occurrences only 3 write a client frame; 11 are LOG LINES, which must keep the key
+  because an operator's line names what the subjects name; 6 are internal publishes
+  or recursion; 1 is a comment. And `message.created` — the commonest frame on the
+  socket — reaches a client as a payload FORWARDED from the api, so no `channel:`
+  literal in the gateway writes it at all.
+
+  A 21-site edit would therefore translate eleven log lines (a defect), translate
+  two publishes (a worse one), and MISS the message frame entirely.
+
+  `send(socket, frame)` at session.ts:119 becomes `send(connection, frame)` and
+  translates on the way out. Everything behind it stays keyed — `connection.buffer`,
+  `marks`, `channelIds`, `lastPublished` — which is what keeps T012b's two
+  comparisons true. The bill falls with it: the 98-page estimate assumed the sites.
+
+T010 — A MID-SESSION JOIN: THE FABRIC PAYLOAD CARRIES THE IDENTITY.
+  `membershipFabricSchema` ({environment, channel, user, change}, strict) gains the
+  channel's identity; the gateway fills the map from the frame BEFORE sending it,
+  inside the `.then()` at session.ts:617-631.
+
+  Option 2 was re-priced at analysis pass 13 and still loses, for a reason that
+  pricing missed: `reread` is a 60-SECOND TIMER (DEFAULT_REREAD_INTERVAL_MS) and the
+  `membership.changed` frame goes out immediately. A refetch cannot meet that
+  deadline; it would leave the first frame for a new channel unnameable.
+  Option 3 — fall back to the key — is REFUSED IN WRITING: it hands a client a uuid
+  for exactly the channels they most recently joined, the worst case wearing the
+  shape of a safe default.
+  The cost of option 1 is one lookup on a low-rate path: `channels.controller.ts:231`
+  publishes with a resolved uuid (4.22's pipe consumed the identity, R2 measured 0 in
+  scope), so the identity comes from the row the member-add already reads.
+
+T011 — THE CURSOR: ACCEPT BOTH, TRY BOTH, PREFER THE IDENTITY.
+  Settled by T006 and not by preference. 19 live strings are simultaneously one
+  channel's identity and another channel's key, so NO SHAPE TEST SEPARATES THEM.
+  Resolution order mirrors 4.22's REST tie-break: the identity wins, and a key that
+  resolves to nothing as an identity is tried as a key.
+
+T012 — A MAP MISS: DROP THE FRAME AND LOG AT ERROR. NEVER EMIT THE KEY.
+  After T010 and the `ALL_CHANNELS` special case, a miss is a bug. The trade is a
+  client that does not receive a frame against a client that receives a uuid.
+    a dropped frame   recoverable — the message is durable and the resume cursor
+                      carries it on the next connect
+    an emitted key    not recoverable — the client needs the lookup table this
+                      chapter exists to remove, for ever
+  So the miss drops and logs loudly, and that branch is in constitution VI's
+  100%-coverage population from the moment it exists (T039, T040).
+
+T013 — NO NEW ADR, which is what the plan predicted.
+  ADR-38 decided the rule; applying a published decision to a second surface is not
+  a new architecture decision. ADR-38's "what it does not cover" paragraph is
+  amended instead (T043). 4.21's plan predicted no and was wrong; 4.22's predicted
+  yes and was right; this one predicted no and is right — the check is the point.
+
+T014 — ONE DEPLOY, NOT TWO, AND THE FAILURE MODE IS NAMED.
+  api and gateway are built and released from one repository by one pipeline and one
+  compose file, and no SAD clause asks for a rolling upgrade across them. Both
+  changed payloads are `z.strictObject`, so BOTH DIRECTIONS BREAK: a new field is
+  rejected by an old reader exactly as a missing one is. They must land together.
+  What a skew looks like, so nobody debugs it twice: an old gateway against a new api
+  throws inside api-client.ts:63's parse, auth.ts:107 catches it and returns
+  `{ outcome: "unavailable" }` — EVERY CONNECTION REFUSED AND THE API BLAMED FOR IT.
+
+T012b — THE PROBES ALREADY EXIST, AND ONE RECORDS HAVING BEEN WRONG ONCE.
+  Nothing needed writing. Both comparisons this chapter can break are already
+  asserted, by tests better than the ones the task described:
+
+    membership.itest.ts:1247  "drops the channel's BUFFERED frames when the removal
+                              lands mid-resume (FR-029)" — and its comment records
+                              that an earlier version PASSED with the FR-029 filter
+                              deleted, because the buffered frame sat at the cursor
+                              rather than above it
+    resume.itest.ts:122       "loses nothing and repeats nothing when a frame is
+                              published mid-backfill"
+    resume.itest.ts:241       "suppresses a frame the backfill already delivered"
+
+  Both suites GREEN today: the gateway integration lane ran 12 files, 231 tests,
+  11 files and 230 tests passing. So T012a is chosen against tests this project
+  already trusts, which is better than against tests written to judge it.
+
+AND THE LANE IS RED IN THE FILE THIS CHAPTER TOUCHES — `typing.itest.ts`.
+  Four observations, four DIFFERENT test names, one signature every time:
+  `untilTyping` (:469) times out with "only 0 of 1 typing frames for <uuid>; saw
+  connection.ack".
+
+    CI 37482921334   "delivers one frame to a member on another instance"     :522
+    local, full lane "sends nothing at all after the signal, until another"   :685
+    local, file alone, run 1    23 of 23 PASSED
+    local, file alone, run 2    "sends nothing to the signaller's OTHER connection"
+
+  So: intermittent, but failing in three of four runs, in two environments, on three
+  different assertions that share one wait. 068 met it twice and recorded a flake
+  both times; a third and fourth observation make that reading unsafe. The shape —
+  a typing frame that never arrives while the ack does — points at the subscription
+  not being established before the signal is published, which is a race this chapter
+  did not introduce and will have to live beside.
+
+  WHY IT MATTERS HERE AND NOT GENERALLY: `typing` is one of the three client frames
+  T007 found, `typing.itest.ts` is the largest channel-naming suite in the gateway
+  (188 mentions), and SC-010 compares CI error sets. A pre-existing red in exactly
+  this file makes every later failure ambiguous unless it is written down first.
+  Not this chapter's subject (FR-009). Carried to gaps.md and to Phase 9.
