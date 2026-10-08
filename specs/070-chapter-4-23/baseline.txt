@@ -507,3 +507,25 @@ T049a — THE TWO UNFENCED LINES ARE LEFT, AND THAT IS A DECISION RATHER THAN A 
   Recorded with its size — 2 English lines, 2 Vietnamese, one chapter — so the next
   person who greps for a uuid beside a channel finds the decision rather than the
   question.
+
+THE BASELINE COVERAGE RUN WAS INVALID, AND THE REASON IS THE HAZARD PASS 15 NAMED.
+  To classify the 18 failures I checked `relay-platform` out at `part4-ch22` and ran
+  `pnpm coverage` there. It reported **123 failed of 2,302**, in eight suites — all
+  of them gateway suites, all of them suites that SPAWN AN API.
+
+    services/api/dist/internal/session.controller.js   built 14:14, from THIS chapter
+      channel_ids  0        external_id  1
+    services/gateway/src                               checked out at part4-ch22
+
+  So the old gateway read `session.channel_ids` from a new api, got `undefined`, and
+  every connection failed. **`isolation-fixtures.ts:150` spawns the api from `dist`**
+  — analysis pass 15 found that and T021 warns about it in the direction that makes
+  a test pass wrongly. This is the same hazard from the other side: a source checkout
+  without a rebuild tests one version of the gateway against another version of the
+  api, and the failure count looks like a catastrophe rather than a mismatch.
+
+  **THE COMPARISON IS WITHDRAWN**, not reported. The tree is back on `main`,
+  `pnpm build` has been re-run, and `git status` is empty. The 18 failures at HEAD
+  remain unclassified — the HEAD coverage run was at least coherent (its dist was
+  built from its own source, nine minutes earlier) — and the cheaper next step is to
+  re-run those eight suites alone rather than the whole lane again.
