@@ -60,11 +60,14 @@ identity -> key    session.ts:1620  channel_id into internalSendRequestSchema
 **The key→identity map is authoritative** — it is built from the session response,
 one row per channel — and the inverse is derived from it at the same moment. Two
 identities colliding on one key is impossible; **two keys colliding on one identity
-is impossible too, because `external_id` is unique per environment**, which is what
-makes the inverse safe to derive rather than a lossy second source.
+is impossible too, because of `unique("channels_environment_id_external_id_unique")`
+in `schema.ts`** — unconditional, not partial, checked at analysis pass 19. That is
+what makes the inverse safe to derive rather than a lossy second source.
 
 ```
-input:  the session response at connect, already scoped to this principal
+input:  the session response at connect, scoped by `users.environmentId` in
+        `channelsForUser` — NOT by `channels.environmentId`; the query reaches
+        channels through `members`, and a member row cannot cross environments
         [{ key, identity }, …] for the channels this user may hear
 
 held:   on the registry's Connection, beside the `channelIds: Set<string>` at
