@@ -156,3 +156,46 @@ suite needs the composed services UP; the api lane needs them DOWN, or a second
 relay drains rows its tests are counting. `turbo run test:integration` with
 `--concurrency=1` stops at the first failure, so one command cannot satisfy both
 (`gaps.md` 068-9).
+
+================================================================================
+HANDED OVER BY FEATURE 070 / CHAPTER 4.23, 2026-10-08.
+
+Feature 068's T069 handed this milestone corrections because its artifacts were
+written against a platform where Journey 3's Stage 2 was broken. This is the same
+debt in the other direction: a premise its predecessor could NOT close.
+
+**WHAT 4.23 CLOSED, SO THIS MILESTONE VERIFIES RATHER THAN PROVOKES.** Stage 5 is
+real-time, and every gateway frame now names a channel by the identifier the
+customer gave it — `order-88412`, not a uuid. The session response carries pairs,
+the `connection.ack` payload's `revisions`, `cursor` and `truncated` are keyed by
+identity, and a client may SAY either form on a send, a typing frame or a resume
+cursor. FR-RTM-11 is the clause; SRS 1.30 is the revision.
+
+So any step of this milestone that expected to demonstrate the socket handing out a
+uuid now demonstrates the opposite, and the script walks from an order number to a
+live frame without a lookup table.
+
+**AND ONE SURFACE IS STILL OPEN, WHICH THIS MILESTONE SHOULD SCOPE AROUND KNOWINGLY
+RATHER THAN DISCOVER MID-RUN.** Webhook payloads carry `channel_id` as a Relay
+identifier — `MessageCreatedData`, `MessageDeletedData` and `MembershipChangedData`
+in `services/api/src/outbox/event.ts`, 8 occurrences, 6 emitted event types,
+delivered to the customer's own endpoint. **Journey 3's Stage 1 promise of "zero
+lookup tables" therefore still fails for a customer's backend**, which is Journey 1's
+subject rather than Priya's — but a milestone that scripts Journey 3 end to end will
+meet it if it touches a webhook. It is recorded in SRS 1.30, ADR-38 in both homes,
+`docs/03` Stage 2, and `specs/070-chapter-4-23/gaps.md` 070-1. **It is not this
+milestone's to build** — `docs/12` §5 rule 4 — and Part 4 has already gained two
+chapters from its own discoveries, which the 070 plan's complexity table names as
+the thing to stop doing at three.
+
+**AND TWO THINGS ABOUT THE LANE, SO THEY ARE NOT DIAGNOSED TWICE.**
+
+`typing.itest.ts` fails intermittently and it is NOT a flake: `session.ts:1407`
+deliberately does not await the fabric subscription before acking a fresh connect
+(*"a stopped broker must cost delivery, not connections"*), so a test that connects,
+awaits the ack and immediately provokes a typing signal races a Redis SUBSCRIBE.
+Seven observations, six distinct test names, one signature. `gaps.md` 070-2.
+
+`pnpm coverage` fails 18 tests on this host that pass when their suites run in their
+own lanes — 88, 16, 24, 32 and 46, all EXIT 0. The lane, not the tree. `gaps.md`
+070-3, and no pin was moved because of it.

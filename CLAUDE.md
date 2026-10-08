@@ -52,9 +52,11 @@ verifies rather than builds, so each fix is its own chapter placed BEFORE it.
 **AND TWO CHAPTERS IN A ROW CAME FROM THE PREVIOUS ONE'S FINDINGS, WHICH IS WORTH WATCHING.**
 4.22 exists because the milestone's premise check found something; 4.23 exists because
 4.22's response-shape sweep did. **A part that keeps growing from its own discoveries can
-stop converging** — the argument for taking this one anyway is that the gap is bounded and
-measured (7 frame schemas, 21 gateway sites, ~50 fence pages, one map at one edge) and that
-a milestone verifying a half-kept promise is worth less than one verifying a kept promise. `docs/12` §3's table keeps the **original** ordinals in column one on
+stop converging** — the argument for taking 4.23 anyway was that the gap was bounded and
+measured, and a milestone verifying a half-kept promise is worth less than one verifying a
+kept promise. **4.23's own sweep then found a THIRD surface — webhook payloads carry
+`channel_id` as a Relay identifier — and it was RECORDED rather than built** (`gaps.md`
+070-1). That is where the line was drawn, and the milestone runs next. `docs/12` §3's table keeps the **original** ordinals in column one on
 purpose so older references resolve, so reading that column as current is how a chapter number
 goes wrong; the movement column is the stable address. **Part 4 tags as `part4-chN`** —
 `rework/` was a Part 3 rebuild artefact and does not carry forward, and the 21 stale
@@ -74,9 +76,11 @@ tags. **Anyone holding an older clone of `relay-platform` must reset rather than
 
 <!-- SPECKIT START -->
 
-**ACTIVE PLAN: `specs/070-chapter-4-23/plan.md`** — chapter 4.23, "The channel a socket
-names". The Priya milestone is **069 / chapter 4.24** and comes after; 068's T069 handed it
-corrections and 4.22's close has since applied them.
+**ACTIVE PLAN: `specs/069-chapter-4-23/plan.md`** — **069 / chapter 4.24**, the Priya
+milestone, and the directory name is stale rather than the chapter: it was 4.23 until
+feature 070 took that number. 068's T069 handed it corrections, 4.22's close applied them,
+and 070's T071 handed it two more — Stage 5 now VERIFIES rather than provokes, and the
+webhook surface is open and scoped around knowingly.
 
 **PART 4 GAINED A SECOND CHAPTER FOR THE SECOND TIME, AND FROM ITS OWN PREDECESSOR.** 4.22
 made thirteen REST routes take the customer's identifier; **the gateway still names every
@@ -93,6 +97,90 @@ early has a cost and this is where it lands. The design is a map at the gateway'
 **THE BILL IS 83 ENGLISH PAGES ACROSS 9 FILES, AGAINST THE SPEC'S OWN "~50 ACROSS 7"** —
 written a day earlier from the files the gap touches, missing `auth.ts`, `typing.ts` and
 `repository.ts`'s 28. 4.15's rule, in the direction it always goes.
+
+**070 IS CLOSED — CHAPTER 4.23, "The channel a socket names".** Movement VII's sixth, and
+the second chapter Part 4 gained. Its record is `specs/070-chapter-4-23/` — `baseline.txt`
+first (Phase 1 through 9 in the order the measurements were taken, including the comparison
+that was withdrawn), then `gaps.md` (**9 new, 14 carried and re-measured**), `clauses.md`,
+`traceability.md`, `contracts/frames.md`, `data-model.md`, `quickstart.md` (**run, and wrong
+three times**), `tasks.md`. **SRS 1.30**, **FR-RTM-11**, **ADR-38 amended in both homes**,
+`docs/03` Stages 2 and 5, `docs/12` and `docs/07`. Tagged **`part4-ch23`**.
+
+    check:fences 291 files across 66 chapters · 0 titled fences      from 65
+    2,204 prose words · 4 figures · 1 TRAP · 2 WHY · 1 Checkpoint
+    63 appendix hunks across 20 files — the bill said 12, and 8 are TESTS
+    api 1,001 of 1,001 · gateway 239 of 241 · e2e 11 · dispatcher 16 · media-worker 32
+    unit 952 of 952 · 15 of 15 typecheck · lint 0
+    ALL SIX PREDICTED GATE DELTAS LANDED: 65->66, 291->291, 30->31, 246->247, 330->334, 34/34/6 UNCHANGED
+
+**COUNTING THE WRONG THING, TWICE, IN ONE PREMISE — AND BOTH NUMBERS WERE RIGHT.** Seven
+client-facing schemas carry a `channel` field, and **`connection.ack` names channels three
+more times without the word**: `revisions` and `cursor` are keyed by channel and `truncated`
+is a list of them. **A grep for a field cannot see a map keyed by that field's value**, and
+those three ride the one frame every client receives first. Then: 21 gateway expressions
+write `channel:` and **only 3 build a client frame** — 11 are LOG LINES an operator reads
+against the subject names, 6 are internal publishes, 1 is a comment. **And `message.created`
+is forwarded from the api and written by no gateway expression at all**, so a 21-site edit
+would rename eleven logs, break two publishes, and miss the commonest frame on the surface.
+**The fix was to open the sites, not to grep harder.**
+
+**SO THE TRANSLATION GOES AT THE ONE `send`, AND THAT IS CONSTITUTION II AND NOT TIDINESS.**
+`connection.buffer` holds frames that `flushable` indexes by `marks[frame.channel]` and that
+the revocation filter compares with `change.channel`. Rename where a frame is BUILT and a
+resuming client is re-sent its whole backlog while a revoked channel's backlog is flushed
+anyway (FR-029) — **both silent**. Renaming on the way out cannot reach either. The probes
+that would have caught it already existed and were green; nothing needed writing.
+
+**THE AMBIGUITY 4.22 CALLED THEORETICAL IS LIVE.** `external_id` uuid-shaped: **0 of 41,772
+on 2026-10-04, 19 of 44,574 on 2026-10-08 — and every one of the nineteen is ANOTHER
+channel's `id`.** So no shape test separates the forms in a resume cursor, both are accepted,
+and the identity wins as it does on REST. **A precaution became a requirement in four days.**
+
+**AND THE CURSOR'S FAILURE MODE IS A FILTER, NOT A REFUSAL.** `scopeCursors` DROPS a key its
+set does not hold — no error, no log — so a client presenting the identifiers this chapter
+hands out would have resumed nothing and been told nothing. That is constitution II's worst
+shape reached by a filter, which is why both forms are accepted for ever rather than during
+an upgrade.
+
+**THE COMPILER NAMED THIRTEEN CONSTRUCTION SITES AND MISSED TWO.** `channel_ids` to pairs is
+a TYPE change, so every stub that constructs a session response went red — except the two
+that read it as `(await res.json()) as { channel_ids: string[] }`. **A hand-written cast is a
+hole in the instrument**; both failed at runtime instead. And **8 of those stubs are published
+files**, which is why the fence bill went ~50/7 → 83/9 → 83+/11 → 98/12 → **20 files charged**:
+4.15's rule five times in one feature, and the last correction came from the compiler rather
+than from reading.
+
+**TWO DEFECTS CAME FROM RUNNING A LANE, NOT FROM READING.** The revocation backstop delivered
+additions with no identity and the new `send` dropped them — the frame announcing a channel
+would have been the one frame unable to name it — so `GET /internal/memberships` carries pairs
+too. And **`packages/e2e` is a lane no phase had run**: its harness filters a client's timeline
+by `f.payload.channel === <uuid>` and matched nothing. 060's `pnpm lint` lesson in a new place.
+
+**`typing.itest.ts` IS NOT A FLAKE, AND 068 CALLED IT ONE TWICE.** Seven observations, six
+distinct test names, one signature. **`session.ts:1407` deliberately does not await the fabric
+subscription before acking a fresh connect** — *"a stopped broker must cost delivery, not
+connections"* — so a suite that connects, awaits the ack and provokes a typing signal races a
+Redis SUBSCRIBE. Diagnosed, not fixed: the repair belongs to that chapter's suite (070-2).
+
+**AND A STALE `dist` MADE A CROSS-VERSION COMPARISON LOOK LIKE A CATASTROPHE.** Checking the
+platform out at `part4-ch22` to classify 18 coverage failures gave **123 failed of 2,302**, all
+in suites that spawn an api: `isolation-fixtures.ts:150` runs the api from `dist`, which was
+built from THIS chapter. **The comparison was withdrawn rather than reported.** The 18 were
+then classified properly — every one of the eight suites passes in its own lane — so they are
+the coverage lane's and **no pin was moved**, because lowering a ratchet to fit a number from a
+red lane is the failure the ratchet exists to prevent.
+
+**AND A THIRD SURFACE IS OPEN: WEBHOOKS.** `outbox/event.ts` carries `channel_id` as a Relay
+identifier in three payload types, 6 emitted event types, delivered to the customer's own
+endpoint — on a boundary whose comment reads *"Consumers are customers: they get external
+ids."* **Third time in three chapters that a comment states the principle two lines above the
+field that breaks it.** Recorded in SRS 1.30, ADR-38 both homes, `docs/03` and `gaps.md` 070-1,
+and **not built**: Part 4 has gained two chapters from its own discoveries and the plan's
+complexity table names three as the signal to stop.
+
+**AND `git add -A <submodule>` FROM THE SUPERPROJECT STAGES A GITLINK.** The commit meant to
+carry the chapter carried `baseline.txt` alone while seven tutorial files sat uncommitted and
+every gate passed **against the working tree**. Commit inside each submodule first.
 
 **068 IS CLOSED at 83 of 83 — CHAPTER 4.22, "The identifier the customer gave it".**
 Movement VII's fifth, and the chapter Part 4 gained. Its record is
@@ -402,12 +490,6 @@ in both homes. Tagged **`part4-ch19`**.
     coverage EXIT 0 · 151 files, 2,168 tests, 0 failed · no pin moved
     ELEVEN ANALYSIS PASSES: 8, 6, 5, 4, 3, 7, 5, 5, 4, 3, 3 — 4 CRITICAL, all in the first two
 
-**A COMMENT THAT EXPLAINS AN ABSENCE AS A NECESSITY IS WHY FOUR CHAPTERS READ PAST IT.**
-`schema.ts` said *"a deletion writes no row here, because a tombstone has no text to preserve"* —
-true **after** the deletion and false at the write site. **Is this reason true at the moment the
-code runs, or only afterwards?** 4.20 paid the other half: a comment that is STILL accurate must
-be left alone.
-
 **A MICROSECOND COLUMN THAT HAS ONLY EVER HELD MILLISECONDS.** Every value written to
 `message_edits.edited_at` arrived as a JavaScript `Date`, so the key's collision window was **a
 thousand times wider** than `schema.ts` claimed and a concurrent edit and deletion collided **1 run
@@ -415,20 +497,18 @@ in 10**. The fix is `sql`now()``. **The edit path still writes a `Date` (065-2)*
 4.21: `ended_by='edit'` **5,929 of 5,929** millisecond-exact, `ended_by='deletion'` **51 of 1,472**
 — 3.5%, which is chance, so the fix holds where it was applied and nowhere else.
 
-**AND A REQUIRED FIELD REACHED A STRICT SCHEMA ONE SEAM AWAY** — 4.11's rule a third time: *an
-argument right about the producer can invert about the reader.* **Find the readers by the TYPE.**
-
 **THREE SCOPED READS AND REMOVING ANY TWO IS INVISIBLE.** Only all three together move 1 of 62.
-**A single-mutation probe measures the DEFENCE, not the arm** (`gaps.md` 065-4) — 4.20 and 4.21 hit
-it again, the second time on an arm whose failure is a LOSS rather than a leak.
+**A single-mutation probe measures the DEFENCE, not the arm** (`gaps.md` 065-4) — 4.20, 4.21, 4.22
+and 4.23 all hit it again, the last of them with the socket gauntlet green at 35 of 35 while the
+suite built for the question went red.
 
-**A LINT RULE IS A CONSTITUTION CLAUSE, FOR THE THIRD TIME.** A `drizzle-orm` import in a test
-outside `services/api/src/db/**` was refused. **Not needing an exemption is better than earning
-one** — test fixtures go in `repository.ts` as `…Raw` methods (`listMessagesRaw`'s precedent),
-which 4.20 and 4.21 both followed.
+**What else it found** — the argument for each is in that feature's `gaps.md`:
 
-**AND THE QUICKSTART WAS WRONG ZERO TIMES AT PHASE 9** — wrong twice during the analysis
-passes instead. **The failures moved to where they are cheap.**
+- A COMMENT THAT EXPLAINS AN ABSENCE AS A NECESSITY IS WHY FOUR CHAPTERS READ PAST IT — ask whether the reason is true at the moment the code RUNS
+- AND A REQUIRED FIELD REACHED A STRICT SCHEMA ONE SEAM AWAY — 4.11's rule a third time: find the readers by the TYPE
+- A LINT RULE IS A CONSTITUTION CLAUSE, FOR THE THIRD TIME — not needing an exemption beats earning one; 4.23 paid it a fourth time over `ioredis`
+- AND THE QUICKSTART WAS WRONG ZERO TIMES AT PHASE 9, because the failures moved to the analysis passes
+
 **063 IS CLOSED — CHAPTER 4.17, "★ Milestone: an image, end to end".** Movement VI closes. Its
 record is `specs/063-chapter-4-17/` — `baseline.txt` first, then `gaps.md` (**7 entries plus the
 carried ledger**), `traceability.md`, `clauses.md`, `quickstart.md` (run, and wrong four times),
