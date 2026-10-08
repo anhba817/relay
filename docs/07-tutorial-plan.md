@@ -81,7 +81,7 @@ Part 0   The idea and the paper          5 chapters   (docs 01–06 as curriculu
 Part 1   Foundations                     4 chapters   (repo, tooling, protocol, compose)
 Part 2   The core loop                   8 chapters   (SRS Phase 1 — the hardest part)
 Part 3   Becoming a platform            26 chapters   (SRS Phase 2)
-Part 4   Everywhere the data went       23 chapters   (analytics · hosted media · the paper trail)
+Part 4   Everywhere the data went       24 chapters   (analytics · hosted media · the paper trail)
 Part 5   Developer experience            6 chapters   (SDK, emoji, dashboard)
 Part 6   Shipping it                     5 chapters   (containers, k8s, CI/CD)
 Part 7   Running it                      6 chapters   (observability, load, chaos, incidents)
@@ -535,7 +535,7 @@ wagging the dog. If a later chapter wants the story, the twelve post-series entr
 and this feature's research are where it is kept.
 
 
-### Part 4 — Everywhere the data went (23 chapters, seven movements)
+### Part 4 — Everywhere the data went (24 chapters, seven movements)
 
 **Renamed, resized and regrouped during grooming.** The structure record is
 `docs/12-part-4-structure.md`; it carries the movement boundaries, the three decisions taken,

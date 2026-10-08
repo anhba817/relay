@@ -465,3 +465,45 @@ T039 / T040 — COVERAGE RAN AND THE LANE IS NOT CLEAN ENOUGH TO PIN AGAINST.
   NEXT, AND IT IS THE HONEST ORDER: get the lane clean (or confirm each failure
   against `part4-ch22` in a worktree), THEN read the pins, THEN both halves of the
   pin probe. Neither T039 nor T040 is marked.
+
+================================================================================
+PHASE 7 — THE DOCUMENTS.  2026-10-08.
+
+  docs/04-srs.md        FR-RTM-11 (Phase 3) and revision 1.30
+  docs/06-adr-deep-dives.md  ADR-38's "what it does not cover" paragraph rewritten:
+                        the socket is closed, and the webhook surface named as open
+  docs/05-sad.md        the same, in the summary's register
+  docs/12-part-4-structure.md  the row's superseded estimate corrected, and the
+                        chapter count 23 -> 24 in two places
+  docs/07-tutorial-plan.md     24 chapters, twice
+  docs/03-journey-map.md       Stage 5 names the frame; Stage 2's paragraph says the
+                        promise was half-kept until 4.23 and is still open on webhooks
+
+  check:docs   31 revisions ascend, 1.0 to 1.30     predicted 30 -> 31   LANDED
+  check:srs    247 clause rows, 247 unique          predicted 246 -> 247 LANDED
+
+T049 — THE FEATURE-LOCAL ID SWEEP FOUND ONE, IN MY OWN REVISION ROW.
+  `git diff part4-ch22 -- docs/` in the superproject, one dot. One hit: **FR-029**,
+  which resolves to nothing in the SRS. It came from `session.ts:658`'s comment —
+  *"AND THE BUFFER IS ONE OF THOSE READERS (FR-029)"* — a feature-local id from the
+  membership-revocation chapter, carried into a published document by quoting the
+  sentence around it. **053's defect, third feature running, and the mechanism is
+  identical every time: moving a sentence without moving its frame.** Removed; the
+  sweep is clean.
+
+T049a — THE TWO UNFENCED LINES ARE LEFT, AND THAT IS A DECISION RATHER THAN A SKIP.
+  `app/(en)/part-2/chapter-06/two-servers-one-conversation/page.mdx:1899-1900` is a
+  terminal transcript of two delivered `message.created` frames carrying a channel
+  uuid, in an untitled fence no gate reads.
+
+  **A CHAPTER IS A SNAPSHOT AT ITS TAG, NOT A CLAIM ABOUT HEAD.** That transcript is
+  what the platform printed at chapter 2.6, and it is still what the platform prints
+  at chapter 2.6 — the fence chain exists so a later chapter AMENDS an earlier file
+  through the appendix rather than editing the earlier chapter's prose. Rewriting
+  the transcript would make that page disagree with its own fences, which is a worse
+  defect than the one it fixes, and the same reasoning that let 4.22 change thirteen
+  REST routes without retro-editing Part 3.
+
+  Recorded with its size — 2 English lines, 2 Vietnamese, one chapter — so the next
+  person who greps for a uuid beside a channel finds the decision rather than the
+  question.
