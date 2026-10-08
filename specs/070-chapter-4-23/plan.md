@@ -103,8 +103,14 @@ catching up with a decision already published.
    suite MUST attack every endpoint with foreign IDs on every build. So either the
    socket is attacked (T042a) or the clause is amended through its own process. The
    exposure predates this chapter; the map is what makes it load-bearing.
-4. *The quickstart runs unmodified.* Still by hand; zero occurrences of `quickstart`
-   in `ci.yml`.
+4. *The quickstart runs unmodified.* **VIOLATED, standing, and the governance section
+   forbids the waiver.** The clause reads *"verified by automated execution in CI"* and
+   `ci.yml` contains zero occurrences of `quickstart`; governance says the Principle VI
+   gates *"are enforced in CI and are not waivable by review."* The first draft of this
+   plan wrote *"still by hand"*, which describes the practice and not the clause. **It
+   predates this feature and this feature cannot close it** — running the quickstart in
+   CI needs a live stack in the tutorial job — so what is owed here is the name, not a
+   fix. T064 runs it by hand, as every chapter since 4.10 has.
 5. *Unknown fields rejected on write endpoints.* Engaged — the frames are strict
    (`internal.ts`: *"Payloads are strict: unknown fields are rejected"*), so widening
    the session response is a contract change both sides must agree on.
