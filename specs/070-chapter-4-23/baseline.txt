@@ -709,3 +709,45 @@ T067 — PUSHED, IN SUBMODULE ORDER.
   relay-tutorial   a090a37..5d35672
   superproject     8809846..aa6dc19
   CI run 37818148799.
+
+T068 — THE FIRST CI RUN, 37818148799: TWO JOBS RED, AND BOTH WERE MINE.
+
+  success  relay-platform — the Docker-free gate
+  success  relay-platform — integration lanes and coverage      ← RED AT THE BASELINE
+  FAILURE  relay-platform — the sealed integration
+  FAILURE  relay-tutorial — build, docs drift, fence chain
+
+  **THE JOB THAT WAS RED AT THE BASELINE IS GREEN.** 068's closing run failed the
+  lanes job on `typing.itest.ts`; this run passed it, and the 18 coverage failures
+  this host produces did not occur on CI at all. So 070-3 is this machine's and
+  070-2's race does not fire there — one green run, which is evidence about CI and
+  not proof the race is gone.
+
+  **THE SEALED SUITE, AND MY PASS-4 "VERIFIED CLEAN" WAS WRONG.** Analysis pass 4
+  recorded `packages/outsider` as unaffected because its channel references are all
+  REST. It also holds a socket, and three tests failed:
+    - *"no a typing frame naming ana; **saw** connection.ack, presence.changed,
+      typing"* — the frame arrived and the filter rejected it, because the filter
+      keys on the uuid
+    - two media assertions comparing a whole `media.updated` payload, **pinned to
+      the uuid on purpose**: *"The channel is the id rather than the external id,
+      which is worth pinning from out here because it is the field a client routes
+      on."* **That reasoning was right and this chapter inverts its conclusion** —
+      what a client routes on is the name the customer gave. The comment was
+      falsified and is repaired (066's rule), and a test pinning the uuid from
+      outside was pinning the defect.
+  21 of 21 locally after the fix, against the composed stack.
+
+  **AND THE FENCE CHAIN BROKE FOR 060's REASON.** `packages/e2e/src/harness.ts`
+  differs at line 554: I fixed that file in Phase 9, AFTER generating the appendix
+  hunks in Phase 8. **The fence chain is a claim about `relay-platform`'s HEAD** —
+  fix the platform, re-dump, re-hunk, push both. 060 wrote that down and this
+  chapter did it anyway.
+
+  **AND RE-HUNKING ALMOST DESTROYED 817 LINES OF EARLIER CHAPTERS' APPENDIX.** Both
+  files already had blocks from previous chapters; the first script matched the
+  LAST block with that title and REPLACED it. `git diff --stat` said
+  `133 insertions, 817 deletions` and the revert was one `git checkout`. **The
+  appendix is append-only for a new chapter**: an existing block belongs to the
+  chapter that wrote it, and a later amendment is a NEW block applied after it.
+  Checking the diff stat before trusting a generated edit is what caught it.
