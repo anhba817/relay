@@ -686,3 +686,26 @@ T064 — THE QUICKSTART RUN, AND IT WAS WRONG THREE TIMES.
 
   **A send by the uuid comes back naming `order-23266`** — FR-003 from the other
   side: a client that still speaks the old name is answered in the new one.
+
+T066 / SC-008 — NOTHING OUTSIDE THE SUBJECT, NAMED PER REPOSITORY.
+  `relay-platform`, `git diff --name-only part4-ch22 --`: **23 files**, every one the
+  chapter's subject or its tests — the 12 the bill named, plus the eight test files
+  the type change named and `channel-naming.itest.ts`, `membership.itest.ts` and
+  `packages/e2e/src/harness.ts`.
+
+  The superproject: six `docs/` files amended on purpose, `specs/070-*`, and four
+  files whose last change predates this chapter — `specs/068-*` and `CLAUDE.md` from
+  068's close (`8809846`), `specs/069-*` from the milestone's correction (`a4d56db`),
+  and `.specify/feature.json` from this feature's own `/speckit-specify`. Checked
+  with `git log part4-ch22..HEAD -- <file>` rather than assumed.
+
+  `relay-tutorial` carries no `part4-ch22` tag, so the command cannot run there; the
+  bound is the fence bill and the chapter directory, as SC-008 says.
+
+  All three working trees clean before the diff was taken.
+
+T067 — PUSHED, IN SUBMODULE ORDER.
+  relay-platform   b8ec4dfe..bfc36383
+  relay-tutorial   a090a37..5d35672
+  superproject     8809846..aa6dc19
+  CI run 37818148799.
