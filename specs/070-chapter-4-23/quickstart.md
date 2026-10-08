@@ -86,12 +86,20 @@ s.on("message", (b) => { const f = JSON.parse(b);
 });'
 ```
 
-**Measured**: every `channel` is a uuid — **and the ack names channels three more
-times without using the word**: `revisions` and `cursor` are keyed by uuid and
-`truncated` is a list of them. The payload has no `channels` or `channel_ids` field
-at all, which is why the first version of this section printed `undefined` and why
-the premise it was written from counted seven fields and missed three structures.
-The customer named the channel `order-NNNNN` and the socket has never heard of it.
+**THIS SECTION CANNOT BE REPRODUCED AFTER THE CHAPTER, AND THAT IS THE POINT.** It
+records what the socket did before: every `channel` a uuid, and the ack naming
+channels three more times without using the word — `revisions` and `cursor` keyed by
+uuid, `truncated` a list of them. The payload has no `channels` or `channel_ids`
+field at all, which is why the first version of this section printed `undefined`,
+and why the premise it was written from counted seven fields and missed three
+structures.
+
+Run the command above against this chapter's build and it prints the NEXT section's
+output instead. Measured on 2026-10-08, against the composed stack:
+
+```
+ack revisions = ["order-23266"] cursor = [] truncated = []
+```
 
 ## 3 · The identity on every frame (PREDICTION)
 
@@ -109,8 +117,16 @@ connection.ack       revisions keys = ["order-NNNNN", …]
                      truncated      = ["order-NNNNN", …] or []
 ```
 
-**Expected after the chapter**: seven fields and three structures, ten of ten, and a
-send naming `order-NNNNN` answering as a send naming the uuid does today.
+**MEASURED on 2026-10-08** for the ack, which is the frame that always arrives:
+
+```
+connection.ack   revisions = ["order-23266"]   cursor = []   truncated = []
+```
+
+An empty `cursor` and `truncated` are a fresh connect, not an absence — §4's resume
+is where those two carry a channel. The other six kinds are provoked by
+`channel-naming.itest.ts` and by each frame's own suite; this section is the one a
+reader can run in a minute.
 
 ## 3b · Saying the identifier, which §1 to §3 never do (PREDICTION)
 
@@ -134,11 +150,24 @@ s.on("open", () => {
 s.on("message", (b) => console.log("  ", String(b).slice(0, 160)));'
 ```
 
+**MEASURED on 2026-10-08**, with the ids this run produced:
+
 ```
-message.ack                  for the send by identifier
-message.ack                  for the send by uuid       (FR-003: both keep working)
-typing  channel = order-NNNNN  echoed to the other member of the channel
+{"type":"connection.ack","payload":{"user":"watcher-9174","revisions":{"order-23266":0},…}}
+{"type":"message.ack","payload":{"seq":1}}
+{"type":"message.created","payload":{…,"channel":"order-23266","seq":1,"text":"by key"}}
+{"type":"message.ack","payload":{"seq":2}}
+{"type":"message.created","payload":{…,"channel":"order-23266","seq":2,"text":"by identifier"}}
 ```
+
+Both sends are acked and **both come back naming `order-23266`** — the one sent by
+uuid included, which is FR-003 from the other side: a client that still speaks the
+old name is answered in the new one.
+
+**THE TYPING LINE NEEDS A SECOND MEMBER AND THIS RUN HAD ONE.** A typing signal is
+not echoed to the signaller — deliberately, and `typing.itest.ts` asserts it — so a
+single socket provokes nothing it can see. Connect a second member's token to watch
+it arrive.
 
 **AND THE TYPING LINE IS THE ONE TO WATCH.** A send that is not understood is
 refused by the api and the client is told. A typing frame for a channel the

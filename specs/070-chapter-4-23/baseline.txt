@@ -661,3 +661,28 @@ AND THE BATTERY'S SECOND RUN EXPLAINED 070-2 RATHER THAN REPRODUCING IT.
 
   **The api's 1,001 of 1,001 also closes the two media failures from Phase 4** as
   lane-interaction: same tree, same host, whole lane, all green.
+
+T064 — THE QUICKSTART RUN, AND IT WAS WRONG THREE TIMES.
+  §0 and §1 ran exactly as written, including the `UUID` and `T` lines analysis pass
+  8 added — `POST /auth/dev-token` with the api key, and the channel's Relay id read
+  back from `GET /v1/channels/$ORD`. Neither existed before that pass and both
+  sections used them.
+
+  1. **§2 cannot be reproduced after the chapter.** It records the before-state and
+     the command now prints the next section's output. Relabelled, with what it
+     actually prints.
+  2. **§3's ack line is MEASURED now**: `revisions = ["order-23266"]`, and an empty
+     `cursor`/`truncated` is a fresh connect rather than an absence.
+  3. **§3b's typing line needed a second member.** A typing signal is not echoed to
+     the signaller — `typing.itest.ts` asserts that deliberately — so the single
+     socket in the run provoked nothing it could see. Said so, with what to do.
+
+  What the run proved, against the composed stack with both images rebuilt:
+
+      {"type":"message.ack","payload":{"seq":1}}
+      {"type":"message.created","payload":{…,"channel":"order-23266","text":"by key"}}
+      {"type":"message.ack","payload":{"seq":2}}
+      {"type":"message.created","payload":{…,"channel":"order-23266","text":"by identifier"}}
+
+  **A send by the uuid comes back naming `order-23266`** — FR-003 from the other
+  side: a client that still speaks the old name is answered in the new one.
