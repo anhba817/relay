@@ -47,9 +47,35 @@ that reading unsafe. The shape — a typing frame that never arrives while the a
 does — points at the subscription not being established before the signal is
 published.
 
-**OPEN.** Not this chapter's subject, and the whole gateway lane went 238 of 238 at
-the end of Phase 5 — **which is one green run and not evidence the flake is gone**
-(045: *"8 of 8 green was not evidence"*).
+**AND THE CAUSE IS A DOCUMENTED DESIGN DECISION, NOT A FLAKE.** `session.ts:1407`,
+on a fresh connect:
+
+    if (presented === undefined) {
+      // A FRESH connect, and 2.6's rule stands unchanged: never wait on the
+      // fabric here. EIR-WS-03 gives the handshake one second, and a stopped
+      // broker must cost delivery, not connections.
+      void subscribing.catch(…);
+      ack(connection, …);
+
+**The ack does not imply the subscription.** `subscribing` is deliberately not
+awaited, so a client that receives `connection.ack` and immediately provokes a
+typing signal is racing a Redis SUBSCRIBE. Typing is the most exposed of the four
+fabrics because it is fire-and-forget, has no retry, and the suite's `untilTyping`
+gives it four seconds. Every one of the seven observations is that race, which is
+why the test NAME keeps changing and the signature never does.
+
+**OPEN, and deliberately not fixed here.** The product behaviour is correct and
+documented — a stopped broker must cost delivery, not connections — so the repair
+belongs in that suite, as a wait on the subscription rather than on the ack.
+`channel-naming.itest.ts` met the same race in Phase 4 and polls the publish instead
+of betting on one, which is the pattern. Touching another chapter's suite would be
+behaviour-neutral but outside this chapter's subject (FR-009); **the error-set
+comparison at T068 is what carries it**, because the baseline CI run was red on this
+same file with this same signature.
+
+The whole gateway lane went 238 of 238 at the end of Phase 5 — **one green run, and
+not evidence the race is gone** (045: *"8 of 8 green was not evidence"*). The final
+battery put it back at 2 of 241.
 
 ### 070-3 · The coverage lane fails 18 tests that pass in their own lanes
 

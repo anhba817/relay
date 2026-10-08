@@ -647,3 +647,17 @@ T062 — THE BATTERY, AND IT FOUND A LANE I HAD NEVER RUN.
   lane that holds whatever it held. Phases 4 and 5 ran the gateway and api lanes and
   called the chapter green; the e2e lane was two commands away and would have said
   otherwise at any point.
+
+AND THE BATTERY'S SECOND RUN EXPLAINED 070-2 RATHER THAN REPRODUCING IT.
+  api 1,001 of 1,001 · dispatcher 16 · media-worker 32 · e2e 11 · gateway 239 of 241
+
+  The two gateway failures are `typing.itest.ts` again — a sixth and seventh
+  observation, two more distinct test names, the same `untilTyping` signature. And
+  the cause is now known and it is not a flake: **`session.ts:1407` deliberately
+  does NOT await `subscribing` before the ack on a fresh connect** — *"never wait on
+  the fabric here… a stopped broker must cost delivery, not connections"*. So the
+  ack does not imply the subscription, and a suite that connects, awaits the ack and
+  immediately provokes a typing signal is racing a Redis SUBSCRIBE.
+
+  **The api's 1,001 of 1,001 also closes the two media failures from Phase 4** as
+  lane-interaction: same tree, same host, whole lane, all green.
