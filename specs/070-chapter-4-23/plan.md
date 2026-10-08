@@ -96,13 +96,15 @@ catching up with a decision already published.
    translation is, which is the ordering 4.22 got wrong and recorded.
 2. *100% branch coverage for tenant isolation.* The map's miss path is in that
    population the moment it exists.
-3. *The cross-tenant suite gates releases.* The gauntlet attacks REST. **Whether it
-   can attack a socket at all is a Phase 1 question (T009), and the answer binds.**
-   The first draft of this plan said an unreachable socket would be *"a gap to record
-   rather than a box to tick"* — **constitution I does not offer that option**: the
-   suite MUST attack every endpoint with foreign IDs on every build. So either the
-   socket is attacked (T042a) or the clause is amended through its own process. The
-   exposure predates this chapter; the map is what makes it load-bearing.
+3. *The cross-tenant suite gates releases.* **SATISFIED, and two earlier readings in
+   this plan were wrong.** The api's gauntlet attacks every HTTP route and **the socket
+   is attacked by `services/gateway/src/isolation.itest.ts`, 23 tests, which says so in
+   its own header** — found at analysis pass 13 by opening the file, after eleven
+   passes had treated the absence as a constitution violation and one had priced the
+   amendment. **What is left is a coverage shape, not a breach**: that suite derives
+   its targets from `frameSchema`'s members, so it catches a new frame type and is
+   green by construction against a chapter that changes what a field CARRIES. T042a
+   adds the cases by hand for that reason.
 4. *The quickstart runs unmodified.* **VIOLATED, standing, and the governance section
    forbids the waiver.** The clause reads *"verified by automated execution in CI"* and
    `ci.yml` contains zero occurrences of `quickstart`; governance says the Principle VI

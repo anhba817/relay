@@ -90,6 +90,11 @@ docs/12:266's ordinal the new row's column one is `—` while the milestone's is
 quickstart.md §0      scripts/seed-demo-tenant.mjs and services/api/dist/db/
                       migrate.js both exist.
 
+the gateway's 5 external-id references   three are isolation-fixtures.ts's test
+                      helpers (createUser, seedSocketTenants) for the socket gauntlet
+                      and two are connection-log/event.ts's user_external_id. None
+                      names a CHANNEL's identity, so pass 1's zero stands.
+
 compose ports         gateway `${RELAY_GATEWAY_PORT:-4001}:4001`, api
                       `${RELAY_API_PORT:-4000}:4000` (compose.yaml:393, :309), so
                       the quickstart's ws://localhost:4001 and localhost:4000 hold
