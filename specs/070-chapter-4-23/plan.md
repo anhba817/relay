@@ -25,6 +25,27 @@ boundary, so **no handler holds an identity by the time it publishes** (R2). The
 chapter that made REST speak the customer's language removed the identity from the
 one place the other design needed it.
 
+## Two halves, and only one of them has a detector
+
+**The session response is a TYPE change and everything else is a VALUE change**, which
+decides where tests have to be written by hand.
+
+```
+channel_ids: z.array(z.string()) -> pairs      the compiler names every
+                                               construction site — ~10 test files
+revisions · cursor · truncated, re-keyed       z.record(z.string(), …) before
+the 21 sites' `channel` field                  z.string().min(1) before AND after
+```
+
+4.14's rule is the first line: **required is what makes the compiler name every
+site.** The second line has no equivalent. Nothing in the toolchain can see a value
+change — not the compiler, not `check:fences`, which compares bytes in published
+fences, and **not `services/gateway/src/isolation.itest.ts`, which derives its
+targets from `frameSchema`'s members and so catches a new frame type and nothing
+about what an existing field carries** (analysis pass 13). The only instrument left
+is an assertion somebody writes, which is why T018 is ten assertions rather than a
+sweep.
+
 ## Technical Context
 
 | | |

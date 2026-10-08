@@ -90,6 +90,10 @@ docs/12:266's ordinal the new row's column one is `—` while the milestone's is
 quickstart.md §0      scripts/seed-demo-tenant.mjs and services/api/dist/db/
                       migrate.js both exist.
 
+packages/*/dist       gitignored (`.gitignore:2`) and 0 files tracked, so a rebuilt
+                      contract cannot land in SC-008's diff — checked because the
+                      `.d.ts` files surface in a tree grep and look committed.
+
 the gateway's 5 external-id references   three are isolation-fixtures.ts's test
                       helpers (createUser, seedSocketTenants) for the socket gauntlet
                       and two are connection-log/event.ts's user_external_id. None
