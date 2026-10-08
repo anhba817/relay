@@ -90,6 +90,13 @@ docs/12:266's ordinal the new row's column one is `—` while the milestone's is
 quickstart.md §0      scripts/seed-demo-tenant.mjs and services/api/dist/db/
                       migrate.js both exist.
 
+the socket gauntlet's boot   isolation-fixtures.ts spawns the api from dist and
+                      seeds through its build output ON PURPOSE: "importing the api
+                      would make this service depend on the api's framework to test
+                      itself, and not knowing how the api is built is the whole of
+                      ADR-05". The design is recorded; only its consequence for a
+                      chapter that changes the session response was not.
+
 packages/*/dist       gitignored (`.gitignore:2`) and 0 files tracked, so a rebuilt
                       contract cannot land in SC-008's diff — checked because the
                       `.d.ts` files surface in a tree grep and look committed.
